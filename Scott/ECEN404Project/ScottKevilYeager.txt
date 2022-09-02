@@ -1,0 +1,6 @@
+
+Week 0 - Directory issue needs to be fixed for storing audio recordings
+		-ESP32 transmits data wirelessly and through serial but I can't find where it is stored
+		
+
+testing testing
