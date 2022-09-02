@@ -1,0 +1,16 @@
+Amy Chen
+431000696
+
+Lab 8/26
+	What I've done:
+		1. Designed PCB
+	Goals for next week:
+		1. Order PCB
+		2. Start looking into state machine for ESP32
+
+Lab 9/2
+	What I've done:
+		1. Ordered PCB
+	Goals for next week:
+		1. Have outline completed of state machine
+		2. Start writing code for state machine
