@@ -19,7 +19,7 @@ Lab 9/9
 	What I've done:
 		1. Complete state machine diagram
 		2. Wrote pseudo code for state machine
-		3. Bagan writing code for state machine
+		3. Began writing code for state machine
 		4. Received PCB
 	Goals for next week:
 		1. Complete state machine code
