@@ -14,3 +14,14 @@ Lab 9/2
 	Goals for next week:
 		1. Have outline completed of state machine
 		2. Start writing code for state machine
+
+Lab 9/9
+	What I've done:
+		1. Complete state machine diagram
+		2. Wrote pseudo code for state machine
+		3. Bagan writing code for state machine
+		4. Received PCB
+	Goals for next week:
+		1. Complete state machine code
+		2. Solder parts on PCB
+		3. Begin testing PCB
