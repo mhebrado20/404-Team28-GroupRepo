@@ -1,0 +1,5 @@
+mongoengine
+tqdm
+colorama
+python-dateutil
+pyAudioAnalysis
