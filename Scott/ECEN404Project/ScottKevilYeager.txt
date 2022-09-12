@@ -16,3 +16,12 @@ Goals to have complete by next week
 	-Be able to send a serialized packet containing variables for audio recording bytes, and hardware information received by AMy's
 	hardware subsystem and have those packets written to a file
 	
+----------------------------------------------------------------
+
+Week 2 - got audio transmitting, need to work on receiving and writing the uint8_t data to a file
+
+Goals to be complete by next week
+	-Assist testing PCB ver A to ensure a quick turn around
+	-have host machine upload file to database after writing file
+	-begin intergrating code for state machine into current data transfer and audio recording code so that we can begin debugging code
+	-continue testing minimum requirements for host PC
