@@ -49,11 +49,11 @@ class AudioSplitter:
 
 
 # dirs: directory where the files to train the SVM are located
-# dirs = ["speakers/Amy/", "speakers/Scott/", "speakers/Matthew/"]
-dirs = "audioSourceFiles/orig/"
+dirs = ["speakers/Amy/", "speakers/Scott/", "speakers/Matthew/"]
+# dirs = "audioSourceFiles/orig/"
 # testDirs: directory where the files to test the SVM are located
-# testDirs = ["speakers/Amy/filesToTest/", "speakers/Scott/filesToTest/", "speakers/Matthew/filesToTest/"]
-testDirs = "audioSourceFiles/testDirs/"
+testDirs = ["speakers/Amy/filesToTest/", "speakers/Scott/filesToTest/", "speakers/Matthew/filesToTest/"]
+# testDirs = "audioSourceFiles/testDirs/"
 
 
 # function for generating the files where d is the filepath from dirs or testDirs
