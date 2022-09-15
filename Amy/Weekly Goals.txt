@@ -13,9 +13,6 @@ Lab 9/2
 		1. Ordered PCB
 	Goals for next week:
 		1. Have outline completed of state machine
-<<<<<<< HEAD
-		2. Start writing code for state machine
-=======
 		2. Start writing code for state machine
 
 Lab 9/9
@@ -28,4 +25,3 @@ Lab 9/9
 		1. Complete state machine code
 		2. Solder parts on PCB
 		3. Begin testing PCB
->>>>>>> 5077dd3baf4931eba445334996be747f32c2703c
