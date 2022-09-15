@@ -1,0 +1,18 @@
+
+Week 0 - Directory issue needs to be fixed for storing audio recordings
+		-ESP32 transmits data wirelessly and through serial but I can't find where it is stored
+		
+
+testing testing
+
+----------------------------------------------------------------
+
+Week 1 - Still working on audio recording, I was approaching serial recording of the audio incorrectly and was informed by my sponsor
+to avoid the wifi communication between the host computer (PI or PC) and the esp32 and to instead focus on sending serialized JSON packets
+that will then be decoded by the host computer, written to a local file, and then stored in the MongoDB database on the same computer.
+		-This past week I have found resources on JSON packet serialization and methods to send audio through these JSON packets
+
+Goals to have complete by next week
+	-Be able to send a serialized packet containing variables for audio recording bytes, and hardware information received by AMy's
+	hardware subsystem and have those packets written to a file
+	
