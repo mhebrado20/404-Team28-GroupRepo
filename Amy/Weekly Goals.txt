@@ -25,3 +25,13 @@ Lab 9/9
 		1. Complete state machine code
 		2. Solder parts on PCB
 		3. Begin testing PCB
+
+Lab 9/16
+	What I've done:
+		1. Began testing PCB
+		2. Loading 6g6vt code onto ESP32
+		3. Began integrating 6v6gt code to my state machine code
+	Goals for next week:
+		1. Edit 2nd round of PCB
+		2. Order 2nd round of PCB
+		3. Keep working towards finishing state maching code
