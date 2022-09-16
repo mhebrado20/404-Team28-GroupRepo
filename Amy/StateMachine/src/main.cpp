@@ -29,6 +29,11 @@ static unsigned int state;
 static unsigned int ring;
 static unsigned int onoff_hook;
 
+char NameOfPerson[];
+char PhoneNumber[];
+static unsigned int TimeOfCall;
+
+
 // prototype functions
 /* void IRAM_ATTR onTimer();
 void timerFunction(); */
@@ -132,6 +137,17 @@ void setup() {
   pinMode(DAC1_PIN, OUTPUT);
 
   state = ONHOOK_NOCALL;
+
+  // sending json packages to NCID
+  /* StaticJsonDocument<128> doc;
+
+  doc["OnHook"] = 0;
+  doc["OffHook"] = 1;
+  doc["CallerName"] = NameOfPerson;
+  doc["CallerNumber"] = PhoneNumber;
+  doc["CallerTime"] = TimeOfCall;
+
+  serializeJson(doc, output); */
 }
 
 void loop() {
