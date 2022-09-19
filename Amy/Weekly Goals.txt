@@ -35,3 +35,11 @@ Lab 9/16
 		1. Edit 2nd round of PCB
 		2. Order 2nd round of PCB
 		3. Keep working towards finishing state maching code
+
+Lab 9/23
+	What I've done:
+		1. Made edits to PCB
+			- Increased 3V3 power trace width to 0.635 mm
+			- Moved phone jacks, ESP32, and SD card adapter to the edge of the board
+			- Fixed connections on pin 5 and 6 of U6
+			- Added Silkscreen layer
