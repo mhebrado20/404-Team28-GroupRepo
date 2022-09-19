@@ -20,15 +20,9 @@
 
 
 // set in main - run status/diagnostic variables
-extern byte debugMode ;
-extern unsigned long callsThisRun  ;
-extern uint32_t successCountLoop  ;
-//extern unsigned long currentDbCallId ;        //current id of call from db.  0=current not retrieved. nnn= id of retrieved call.
-extern uint32_t dbLastAccessAtMs ;            // last successful access to DB. Set in get getCallFromDb(). Used by resourceMonitor().
-//dBlastAccessAtMs
-extern bool dbOnline ;                        //  (!client.connect( config.remoteHost , 80 ))  tested / set periodically. if false for x seconds, restart forced.
-extern bool wlanAvailable ;                   // WiFi.status() != WL_CONNECTED
-extern bool newCallIndicator  ;
+extern byte debugMode;
+extern unsigned long callsThisRun;
+extern uint32_t successCountLoop;
 
 
 

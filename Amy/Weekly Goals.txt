@@ -41,5 +41,7 @@ Lab 9/23
 		1. Made edits to PCB
 			- Increased 3V3 power trace width to 0.635 mm
 			- Moved phone jacks, ESP32, and SD card adapter to the edge of the board
-			- Fixed connections on pin 5 and 6 of U6
 			- Added Silkscreen layer
+		2. Made edits to schematic
+			- Fixed connections on pin 5 and 6 of U6
+			- Moved FIRSTRING output pin from 34 (only input pin) to 26

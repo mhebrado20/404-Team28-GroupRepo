@@ -18,26 +18,28 @@ void startTimer();
 void endTimer();
 void getADCSample();
 
-hw_timer_t * timer = NULL;
+// a pointer variable timer of the type hw_timer_t in order to configure the timer
+hw_timer_t *timer = NULL;
 
 void onTimer(){
-  static unsigned int counter = 1;
+  static unsigned int timeCounter = 1;
 
   Serial.print("onTimer ");
-  Serial.print(counter);
+  Serial.print(timeCounter);
   Serial.print(" at ");
   Serial.print(millis());
   Serial.println(" ms");
 
-  if (counter == 10) {
+  // need to change if statement
+  if (timeCounter == 10) {
     endTimer();
   }
 
-  counter++;
+  timeCounter++;
 }
 
 void startTimer() {
-  Serial.println("Start timer ");
+  Serial.println("Start timer");
   // timer 0, CP = 1 ns, count up
   timer = timerBegin(0, 80, true);
   // edge triggered
@@ -50,6 +52,7 @@ void startTimer() {
 void endTimer() {
   timerEnd(timer);
   timer = NULL;
+  Serial.println("Timer stopped.");
 }
 
 void ICACHE_RAM_ATTR getAdcSample()

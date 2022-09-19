@@ -1057,10 +1057,10 @@ void loop() {
   }
 
 
-
+  // don't need
   // in debugMode 1 the demod output is raw/unparsed so we exit before the parser stage
   // touch screen locked out - requires restart to clear.
-  static int charsPrinted = 0 ;
+  /* static int charsPrinted = 0 ;
   if ( debugMode == 1 )
   {
     static bool runOnce = false ;
@@ -1081,7 +1081,7 @@ void loop() {
 
     }
     return ;  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  }
+  } */
 
 
   yield() ;
