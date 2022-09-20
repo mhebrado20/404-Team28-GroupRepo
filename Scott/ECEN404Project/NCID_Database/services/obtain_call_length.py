@@ -23,7 +23,9 @@ def creation_date(folder_location: str, file_name: str):
 
 
 def obtain_length_of_call(file_location: str):
+    # define the variable audio to be the wave file at file_location
     audio = WAVE(file_location + ".wav")
+    # using the mutagen.wave function .info.length cast the float value to an int and assign it to duration
     duration = int(audio.info.length)
-
+    # return the integer with the length of the call
     return audio_duration(duration)

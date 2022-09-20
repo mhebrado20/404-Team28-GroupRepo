@@ -57,7 +57,7 @@ i2s_pin_config_t i2sPins = { // this type configures the pins of the microcontro
     .bck_io_num = GPIO_NUM_32,
     .ws_io_num = GPIO_NUM_25,
     .data_out_num = I2S_PIN_NO_CHANGE,
-    .data_in_num = GPIO_NUM_33};
+    .data_in_num = GPIO_NUM_35};
 
 // how many samples to read at once
 const int SAMPLE_SIZE = 16384;

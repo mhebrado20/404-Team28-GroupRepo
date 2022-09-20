@@ -4,6 +4,10 @@
     <list default="true" id="05223a89-511a-4a35-86b8-f3f68abd6237" name="Changes" comment="Renaming and changing directory of database code">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/services/JSON_data_transfer.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/JSON_data_transfer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/obtain_call_length.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/obtain_call_length.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/upload_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/upload_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../i2s_sampling/.vscode/extensions.json" beforeDir="false" afterPath="$PROJECT_DIR$/../i2s_sampling/.vscode/extensions.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../i2s_sampling/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../i2s_sampling/src/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
