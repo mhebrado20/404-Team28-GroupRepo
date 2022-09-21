@@ -1,7 +1,7 @@
 import datetime
 import mongoengine
-from src.data.incoming_callers import IncomingCaller
-from src.data.receiving_callers import ReceivingCaller
+from data.incoming_callers import IncomingCaller
+from data.receiving_callers import ReceivingCaller
 # from src.data.recordings import Recording
 
 

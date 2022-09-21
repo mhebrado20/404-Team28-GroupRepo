@@ -1,6 +1,6 @@
-from src.data.calls import Call
-import src.services.obtain_call_length as ocl
-from src.services.remove_silence import remove_silence
+from data.calls import Call
+import services.obtain_call_length as ocl
+from services.remove_silence import remove_silence
 from pathlib import Path
 import mongoengine
 # from data.incoming_callers import IncomingCaller

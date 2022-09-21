@@ -1,33 +1,52 @@
 import json
 import serial
 import wave
-import io
-import numpy as np
-import soundfile as sf
-from scipy.io.wavfile import write
-
-connection = serial.Serial(port="COM3", baudrate=115200)
-connection.reset_input_buffer()
-
-# open the file, name it and set it to write
-audiofile = wave.open('C:/Users/sky20/Desktop/serialrecording/sound.wav', 'wb')
-audiofile.setframerate(16000)  # sample rate
-audiofile.setnchannels(1)  # mono(1) or stereo(2)
-audiofile.setsampwidth(2)
+import pyaudio
+from upload_data import num_files
 
 
-def convert_bytearray_to_wav_ndarray(input_bytearray: bytes, sampling_rate=16000):
-    bytes_wav = bytes()
-    byte_io = io.BytesIO(bytes_wav)
-    write(byte_io, sampling_rate, np.frombuffer(input_bytearray, dtype=np.uint8))
-    output_wav = byte_io.read()
-    output, samplerate = sf.read(io.BytesIO(output_wav))
-    return output
+def record_audio(port: str, filelocation: str, samplerate: int = 9600, chunk: int = 1024, baudrate: int = 115200):
+    connection = serial.Serial(port=port, baudrate=baudrate)
+    connection.reset_input_buffer()
+
+    # 16 bits per sample
+    sample_format = pyaudio.paInt16
+    chans = 1
+
+    # Record at 9600 samples per second
+    smpl_rt = samplerate
+    seconds = 6
+    filename = filelocation + '/recording' + str(num_files(filelocation)) + '.wav'
+    # Create an interface to PortAudio
+    pa = pyaudio.PyAudio()
+
+    stream = pa.open(format=sample_format, channels=chans,
+                     rate=smpl_rt, input=True, frames_per_buffer=chunk)
+
+    print('recording')
+
+    # Initialize array that be used for storing frames
+    frames = []
+
+    # Store data in chunks for 8 seconds
+    for i in range(0, int(smpl_rt / chunk * seconds)):
+        data = stream.read(chunk)
+        frames.append(data)
+
+    # Stop and close the stream
+    stream.stop_stream()
+    stream.close()
+
+    # Terminate - PortAudio interface
+    pa.terminate()
+
+    # Save the recorded data in a .wav format
+    sf = wave.open(filename, 'wb')
+    sf.setnchannels(chans)
+    sf.setsampwidth(pa.get_sample_size(sample_format))
+    sf.setframerate(smpl_rt)
+    sf.writeframes(b''.join(frames))
+    sf.close()
 
 
-while connection.isOpen():
-    data = connection.readline()  # read the command line data
-    audiofile = convert_bytearray_to_wav_ndarray(data)
-
-scipy.io.wavfile.write('C:/Users/sky20/Desktop/serialrecording/sound.wav', 16000, audiofile)
-audiofile.close()
+record_audio('COM3', 'C:/Users/sky20/Desktop/serialrecording')
