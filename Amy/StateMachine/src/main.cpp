@@ -6,6 +6,8 @@
 #include "XMDF.h"
 #include <SPI.h>
 #include <ArduinoJson.h>
+#include <PhoneDTMF.h>
+#include <driver/adc.h>
 
 // define pins
 #define ONOFFHOOK_PIN 14
@@ -58,6 +60,7 @@ void ICACHE_FLASH_ATTR handleRingDetector(bool force);
 char versionNum[] = "SCID ESP32 Decoding v1.0";
 
 Afsk modemTST;
+PhoneDTMF dtmf = PhoneDTMF();
 
 void phoneState1() {
 
@@ -362,6 +365,12 @@ void phoneState2() {
   // if DTMF is detected
     // if DTMF is keypad
       //check what numbers are being pressed
+    uint8_t tones = dtmf.detect();
+    char button = dtmf.tone2char(tones);
+    if(button > 0) {
+    	Serial.print(button); Serial.println(" pressed");
+    }
+    delay(1000);
     // if DTMF is user or caller hanging up
       phoneState = ONHOOK_CALLEND;
     // if Howler tone is detected
@@ -475,6 +484,10 @@ void setup() {
 
   // setup timer and ADC. From here on, SPI slaves (TS, TFT & ADC ) must be interlocked.
   AFSK_init(&modemTST);
+
+  adc1_config_width(ADC_WIDTH_BIT_12); // set 12 bit (0-4096)
+  adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_0); // do not use attenuation
+  dtmf.begin((uint8_t)ADC1_PIN); // Use ADC 1, Channel 4 (GPIO36 on Wroom32)
 
   Serial.println(F("Exiting setup()")) ;
 
