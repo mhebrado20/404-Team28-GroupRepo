@@ -10,6 +10,7 @@
             "includePath": [
                 "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/include",
                 "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/src",
+                "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src",
                 "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                 "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/.pio/libdeps/esp32doit-devkit-v1/ArduinoJson/src",
                 "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/.pio/libdeps/esp32doit-devkit-v1/ESP32TimerInterrupt/src",
@@ -208,7 +209,6 @@
                 "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                 "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/BluetoothSerial/src",
                 "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src",
-                "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src",
                 "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/ESP32/src",
                 "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src",
                 "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src",
@@ -241,6 +241,7 @@
                 "path": [
                     "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/include",
                     "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/src",
+                    "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src",
                     "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                     "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/.pio/libdeps/esp32doit-devkit-v1/ArduinoJson/src",
                     "c:/Users/jiayi/OneDrive/Documents/GitHub/404-Team28-GroupRepo/Amy/StateMachine/.pio/libdeps/esp32doit-devkit-v1/ESP32TimerInterrupt/src",
@@ -439,7 +440,6 @@
                     "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
                     "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/BluetoothSerial/src",
                     "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/DNSServer/src",
-                    "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/EEPROM/src",
                     "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/ESP32/src",
                     "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src",
                     "C:/Users/jiayi/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src",
