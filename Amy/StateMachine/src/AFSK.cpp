@@ -66,59 +66,61 @@ void ICACHE_RAM_ATTR getAdcSample()
   // tp prevent contention.
 
   // v 0.65 - we let the timer run but don't act on it. Minimise timer suspend/resume overhead.
-  if ( ! demodRun ) {
-    return ; // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  if (!demodRun) {
+    return;
   }
-  demodActive = true ;  // interlock
 
-  const byte MCP3002Ch0 = 0b01101000 ;  // start bit + openended conversion + chan 0 + MSBF (see data sheet)
-  const byte MCP3002Ch1 = 0b01111000 ;  // start bit + openended conversion + chan 1 + MSBF (see data sheet)
-  byte dataMsb0 ;
-  byte dataLsb0 ;
-  byte dataMsb1 ;
-  byte dataLsb1 ;
+  demodActive = true;  // interlock
 
-  int  sample8BitMidZero ;
-  static uint32_t runCount = 0 ;
+  const byte MCP3002Ch0 = 0b01101000;  // start bit + openended conversion + chan 0 + MSBF (see data sheet)
+  const byte MCP3002Ch1 = 0b01111000;  // start bit + openended conversion + chan 1 + MSBF (see data sheet)
+  byte dataMsb0;
+  byte dataLsb0;
+  byte dataMsb1;
+  byte dataLsb1;
 
-  if ( runCount >= 100000UL ) {
+  int sample8BitMidZero;
+  static uint32_t runCount = 0;
+
+  if (runCount >= 100000UL) {
     // approx 10 seconds
-    demodLastActiveAtMs = millis() ;
-    runCount = 0 ;
-  }
-  else runCount++ ;
-
-
-  SPI.beginTransaction( SPISettings(2000000, MSBFIRST, SPI_MODE0) );
-
-  digitalWrite( ADC_CS_PIN, LOW );
-  dataMsb0 = SPI.transfer( MCP3002Ch0 ) & 0x03;  // 2 most significant digits in this byte
-  dataLsb0 = SPI.transfer( 0 );                  // Push remaining data and get LSB byte return
-  digitalWrite( ADC_CS_PIN, HIGH );
-
-  digitalWrite( ADC_CS_PIN, LOW );
-  dataMsb1 = SPI.transfer( MCP3002Ch1 ) & 0x03;  // 2 most significant digits in this byte
-  dataLsb1 = SPI.transfer( 0 );                  // Push remaining data and get LSB byte return
-  digitalWrite( ADC_CS_PIN, HIGH );
-
-  SPI.endTransaction( );
-
-  sample8BitMidZero =  (int16_t)( (  dataMsb0 << 6 )  | ( dataLsb0 >> 2 ) ) - 128 ;  // build 8 significant bit number in range -128 to 127
-  adcValueCh1 = (int16_t)( dataMsb1 << 8 ) | dataLsb1 ;   // 0..1023  ring detector
-
-  AFSK_adc_isr(AFSK_modem, sample8BitMidZero  );
-
-  // v0.71 call ringDetector() every 10 times ( ~1ms @9600Hz)
-  static byte ringDetectorItCount = 0 ;
-  if ( ringDetectorItCount < 10 ) {
-    ringDetectorItCount ++ ;
+    demodLastActiveAtMs = millis();
+    runCount = 0;
   }
   else {
-    ringDetectorItCount = 0 ;
-    ringDetector() ;
+    runCount++;
   }
 
-  demodActive = false ;
+  SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
+
+  digitalWrite(ADC_CS_PIN, LOW);
+  dataMsb0 = SPI.transfer(MCP3002Ch0) & 0x03;  // 2 most significant digits in this byte
+  dataLsb0 = SPI.transfer(0);                  // Push remaining data and get LSB byte return
+  digitalWrite(ADC_CS_PIN, HIGH);
+
+  digitalWrite(ADC_CS_PIN, LOW);
+  dataMsb1 = SPI.transfer(MCP3002Ch1) & 0x03;  // 2 most significant digits in this byte
+  dataLsb1 = SPI.transfer(0);                  // Push remaining data and get LSB byte return
+  digitalWrite(ADC_CS_PIN, HIGH);
+
+  SPI.endTransaction();
+
+  sample8BitMidZero = (int16_t)((dataMsb0 << 6) | (dataLsb0 >> 2)) - 128;  // build 8 significant bit number in range -128 to 127
+  adcValueCh1 = (int16_t)( dataMsb1 << 8 ) | dataLsb1;   // 0..1023  ring detector
+
+  AFSK_adc_isr(AFSK_modem, sample8BitMidZero);
+
+  // v0.71 call ringDetector() every 10 times ( ~1ms @9600Hz)
+  static byte ringDetectorItCount = 0;
+  if (ringDetectorItCount < 10) {
+    ringDetectorItCount++;
+  }
+  else {
+    ringDetectorItCount = 0;
+    ringDetector();
+  }
+
+  demodActive = false;
 }
 
 
@@ -140,14 +142,14 @@ void ICACHE_FLASH_ATTR AFSK_init(Afsk *afsk) {
   fifo_init(&afsk->demodFifo, (uint8_t *)afsk->demodBuf, sizeof(afsk->demodBuf));
 
   // Fill delay FIFO with zeroes
-  for (int i = 0; i < SAMPLESPERBIT / 2; i++) {
+  for (int i = 0; i < (SAMPLESPERBIT / 2); i++) {
     fifo_push(&afsk->delayFifo, 0);
   }
 
-  afsk->demodState = dmINIT ;
+  afsk->demodState = dmINIT;
   // demodInitialised = true ;
 
-  pinMode( ADC_CS_PIN, OUTPUT );
+  pinMode(ADC_CS_PIN, OUTPUT);
 
   // AFSK_resume() ;  // timer1 initial set to start demod.
   // v0.65
@@ -160,12 +162,14 @@ void ICACHE_FLASH_ATTR AFSK_init(Afsk *afsk) {
 // ==============
 
 void ICACHE_RAM_ATTR AFSK_resume() {
-  if ( debugMode == 3  ) swSerial.println(F("in AFSK_resume()" )) ;
+
+  if (debugMode == 3) {
+    swSerial.println(F("in AFSK_resume()"));
+  }
   // timer1: http://onetechpulse.com/esp8266-microsecond-delay-timer/
   // v0.65  only enable/disable now required ?
 
   demodRun = true ;
-
 }
 
 // ==============
@@ -173,9 +177,15 @@ void ICACHE_RAM_ATTR AFSK_resume() {
 // ==============
 
 void ICACHE_RAM_ATTR AFSK_suspend() {
-  if ( debugMode == 3  ) swSerial.println(F("in AFSK_suspend()" )) ;
+
+  if (debugMode == 3) {
+    swSerial.println(F("in AFSK_suspend()"));
+  }
+
   demodRun = false ;
-  while ( demodActive ) {  } // wait
+
+  while (demodActive) {} // wait
+
 }
 
 
@@ -246,11 +256,13 @@ void ICACHE_RAM_ATTR AFSK_adc_isr(Afsk *afsk, int8_t currentSample) {
 
   // te_47 no change to currentPhase if at middle point.
   if (SIGNAL_TRANSITIONED(afsk->sampledBits)) {
+
     if (afsk->currentPhase < PHASE_THRESHOLD) {
       afsk->currentPhase += PHASE_INC;
     } else if (afsk->currentPhase > PHASE_THRESHOLD) {
       afsk->currentPhase -= PHASE_INC;
     }
+
   }
 
   // We increment our phase counter
@@ -287,38 +299,52 @@ void ICACHE_RAM_ATTR AFSK_adc_isr(Afsk *afsk, int8_t currentSample) {
 
 
 
-    if ( ( afsk->curr_bit ==  afsk->last_bit )  && (  afsk->curr_bit == MARKA  )    ) {
-      if ( afsk->counter1111 < 255 ) afsk->counter1111 ++  ;
+    if ((afsk->curr_bit == afsk->last_bit)  && (afsk->curr_bit == MARKA)) {
+
+      if (afsk->counter1111 < 255) {
+        afsk->counter1111++;
+      }
+
     }
     else {
       afsk->counter1111 = 0 ;
     }
 
-    if ( ( afsk->curr_bit ==  afsk->last_bit )  && (  afsk->curr_bit == SPACEA  )    ) {
-      if ( afsk->counter0000 < 0xFFFF ) afsk->counter0000 ++  ;
+    if ((afsk->curr_bit == afsk->last_bit)  && (afsk->curr_bit == SPACEA)) {
+
+      if (afsk->counter0000 < 0xFFFF) {
+        afsk->counter0000++;
+      }
+
     }
     else {
       afsk->counter0000 = 0 ;
     }
 
-    if ( afsk->curr_bit != afsk->last_bit ) {
-      if ( afsk->counter0101 < 255 ) afsk->counter0101 ++ ;
+    if (afsk->curr_bit != afsk->last_bit) {
+
+      if (afsk->counter0101 < 255) {
+        afsk->counter0101++;
+      }
+      
     }
     else afsk->counter0101 = 0 ;
 
 
-    if ( afsk->demodState == dmINIT ) {
-      afsk->counter1111 = 0 ;
-      afsk->counter0000 = 0 ;
-      afsk->counter0101 = 0 ;
-      fifo_flush( &afsk->demodFifo ) ;
-      afsk->demodError = 0 ;
-      afsk->demodState = dmREADY ;
+    if (afsk->demodState == dmINIT) {
+      afsk->counter1111 = 0;
+      afsk->counter0000 = 0;
+      afsk->counter0101 = 0;
+      fifo_flush(&afsk->demodFifo);
+      afsk->demodError = 0;
+      afsk->demodState = dmREADY;
     }
 
     // in debugMode 1  the data is presented as raw without parsing, so quit here (after setting demodState = dmREADY)  v0.64
 
-    if ( debugMode == 1 ) return ; // >>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    if (debugMode == 1) {
+      return;
+    }
 
 
     if ( afsk->demodState == dmREADY ) {

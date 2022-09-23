@@ -41,7 +41,30 @@ Lab 9/23
 		1. Made edits to PCB
 			- Increased 3V3 power trace width to 0.635 mm
 			- Moved phone jacks, ESP32, and SD card adapter to the edge of the board
-			- Added Silkscreen layer
 		2. Made edits to schematic
 			- Fixed connections on pin 5 and 6 of U6
 			- Moved FIRSTRING output pin from 34 (only input pin) to 26
+			- Opened 2nd GND pin on esp32 and connected it to GND.
+			- Changed J3 Tip+ to Ring+.
+		3. Edited and tested first PCB
+			- Cut trace from R7 to R8.
+			- Cut trace from R7 to R14.
+			- Connected R7 to pin 5 of U6
+			- Connected R8 to R14.
+			- Connected R14 to pin 6 of U6.
+			- Ring detection worked
+			- Ring suppression didn't work? -- I didn't have Ring pin connected to Ring.
+			- Phone pick up detection worked
+			- On/off hook detection worked
+			- Hook flash detection worked
+			- LED doesn't light up, need to switch MOSFET
+			- Hysteresis probably don't need..
+			- Incoming voice disappears after R6
+			- Ordered Micro SD card connector, need to make symbol and footprint for schematic and PCB
+		4. Edited second PCB
+			- Cut trace from R7 to R8.
+			- Cut trace from R7 to R14.
+			- Connected R7 to pin 5 of U6
+			- Connected R8 to R14.
+			- Connected R14 to pin 6 of U6.
+			- Phone pick up detection worked
