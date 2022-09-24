@@ -6,6 +6,7 @@ a final average confidence interval
 
 from pyAudioAnalysis import audioTrainTest as aTT
 import glob
+import pathlib as Path
 
 # testDirectory: directory where the files to test the SVM are located
 testDirectory = glob.glob("speakers/Amy/filesToTest/*.wav") + glob.glob("speakers/Scott/filesToTest/*.wav") \
@@ -15,6 +16,20 @@ AmyAVG = 0
 ScottAVG = 0
 MatthewAVG = 0
 i = 0
+
+
+def numFiles(folder_location):
+    # define our return variable, this one counts the number of files in a folder, so it is called quantity, start at
+    # one to prevent counting errors; done by trial and error, I was always one file short on my quantity value
+    quantity = 1
+    # this will use the .iterdir() function of path to list the subdirectories of the folder_location path
+    for path in Path(folder_location).iterdir():
+        # if the subdirectory is a file then increment quantity
+        if path.is_file():
+            quantity += 1
+
+    return quantity
+
 
 # function for truncating the percentages to display
 def truncatePrecentage(num, n):
