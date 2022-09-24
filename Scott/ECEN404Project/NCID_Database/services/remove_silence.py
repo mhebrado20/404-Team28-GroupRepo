@@ -39,3 +39,16 @@ def remove_silence(folder_location: str, file_name: str):
     wavfile.write(folder_location + "_processed" + file_name + "_processed" + ".wav", fs, new_signal)
 
     return new_signal
+
+
+print('Starting Amy\'s file')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/Closer to face test files', '/AmyCloserToFace')
+print('Done with Amy\'s file')
+
+print('Starting Scott\'s file')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/Closer to face test files', '/ScottCloserToFace')
+print('Done with Scott\'s file')
+
+print('Starting Matthew\'s file')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/Closer to face test files', '/MatthewCloserToFace')
+print('Done with Matthew\'s file')

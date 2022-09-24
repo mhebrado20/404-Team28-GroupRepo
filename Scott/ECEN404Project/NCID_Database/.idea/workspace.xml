@@ -2,11 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="09d4bb32-e4a2-4995-9eb2-adc629d5575c" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Matthew/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Matthew/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Matthew/voiceMap/svm_all" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Matthew/voiceMap/svm_allMEANS" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Matthew/voiceMap/svm_dataset" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../Matthew/voiceMap/svm_datasetMEANS" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/calls.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/calls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/JSON_data_transfer.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/JSON_data_transfer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/upload_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/services/upload_data.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,6 +16,12 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/services/upload_data.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/data/calls.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/services/JSON_data_transfer.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/services/obtain_call_length.py" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -28,7 +35,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../.." />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunManager">

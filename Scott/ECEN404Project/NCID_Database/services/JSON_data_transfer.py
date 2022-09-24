@@ -15,7 +15,7 @@ def record_audio(port: str, filelocation: str, samplerate: int = 9600, chunk: in
 
     # Record at 9600 samples per second
     smpl_rt = samplerate
-    seconds = 6
+    seconds = 45
     filename = filelocation + '/recording' + str(num_files(filelocation)) + '.wav'
     # Create an interface to PortAudio
     pa = pyaudio.PyAudio()

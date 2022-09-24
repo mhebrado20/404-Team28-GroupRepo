@@ -36,17 +36,17 @@ for f in testDirectory:
 
     # Amy
     print(f"P({p_nam[0]} = {truncatePrecentage(p[0], 4)})")
-    if i >= 0 and i < 43:
+    if i >= 0 and i < 46:
         AmyAVG += truncatePrecentage(p[0], 4)
 
     # Scott
     print(f"P({p_nam[1]} = {truncatePrecentage(p[1], 4)})")
-    if i >= 43 and i < 97:
+    if i >= 46 and i < 92:
         ScottAVG += truncatePrecentage(p[1], 4)
 
     # Matthew
     print(f"P({p_nam[2]} = {truncatePrecentage(p[2], 4)})")
-    if i >= 97 and i < 157:
+    if i >= 92 and i < 138:
         MatthewAVG += truncatePrecentage(p[2], 4)
 
     i += 1
@@ -55,9 +55,9 @@ for f in testDirectory:
 # Calculate the averages
 # Number of test files are known
 print("\nCalculating Averages: ")
-AmyAVG = AmyAVG / 42
-ScottAVG = ScottAVG / 54
-MatthewAVG = MatthewAVG / 60
+AmyAVG = AmyAVG / 46
+ScottAVG = ScottAVG / 46
+MatthewAVG = MatthewAVG / 46
 
 # Final print statements
 print("Testing Amy's Files: ", AmyAVG)

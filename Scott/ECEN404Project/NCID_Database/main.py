@@ -1,10 +1,5 @@
-import mongoengine
-
 import user_interface as ui
 import src.data.mongoengine_setup as mongo_setup
-import src.services.upload_data as ud
-
-from data.calls import Call
 
 # mongo_setup.global_initialization allows mongoengine to interact with the database,
 # it only needs to be called once, but it must be done before using mongo engine to interact with any data
