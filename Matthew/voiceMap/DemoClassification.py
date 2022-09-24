@@ -16,13 +16,6 @@ ScottAVG = 0
 MatthewAVG = 0
 i = 0
 
-
-def numberOfFiles(directory):
-    for k in directory:
-        k += 1
-    return k
-
-
 # function for truncating the percentages to display
 def truncatePrecentage(num, n):
     percent = int((num * 100) * (10 ** n) / (10 ** n))
