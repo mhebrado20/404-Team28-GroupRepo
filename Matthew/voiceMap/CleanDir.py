@@ -19,26 +19,7 @@ def pruneFolder(d):
     file = glob.glob(d + "*.wav")
     # print("\nTest files: ", file)  # test prints
     for f in file:
-        # print("\nIn for f in file: ")
-        # print("\nf: ", f)
-
-        # filenames are known and hardcoded for demo purposes
-        # TODO put these files in a different directory and change the extraction method (extract to another directory)
-        # TODO for 404 code optimization
-        if f == "speakers/Scott/filesToTest\Scott_Test.wav":
-            print(f, "is a protected file, moving on\n")
-        elif f == "speakers/Amy/filesToTest\Amy_Test.wav":
-            print(f, "is a protected file, moving on\n")
-        elif f == "speakers/Matthew/filesToTest\Matthew_Test.wav":
-            print(f, "is a protected file, moving on\n")
-        elif f == "speakers/Amy\Amy_Orig.wav":
-            print(f, "is a protected file, moving on\n")
-        elif f == "speakers/Scott\Scott_Orig.wav":
-            print(f, "is a protected file, moving on\n")
-        elif f == "speakers/Matthew\Matthew_Orig.wav":
-            print(f, "is a protected file, moving on\n")
-        else:
-            os.remove(f)  # remove the file if it is not one of the protected files
+         os.remove(f)  # remove the file if it is not one of the protected files
 
 
 # clean training files

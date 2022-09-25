@@ -6,7 +6,7 @@ from pyAudioAnalysis.audioTrainTest import extract_features_and_train
 
 m_step, s_step = 0.05, 0.05  # set midterm-step and short-term step
 # dirs: directory where the files to train the SVM are located
-dirs = ["speakers/Amy/", "speakers/Scott/", "speakers/Matthew/"]
+dirs = ["speakers/Amy/splits/", "speakers/Scott/splits/", "speakers/Matthew/splits/"]
 
 extract_features_and_train(dirs, m_step, m_step, s_step, s_step, "svm_rbf", "svm_all")
 """ 

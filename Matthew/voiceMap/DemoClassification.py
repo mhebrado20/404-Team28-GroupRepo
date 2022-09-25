@@ -6,29 +6,39 @@ a final average confidence interval
 
 from pyAudioAnalysis import audioTrainTest as aTT
 import glob
-import pathlib as Path
+from pathlib import Path
+
+
+def numFiles(folderLocation):
+    # define our return variable, this one counts the number of files in a folder, so it is called quantity, start at
+    # one to prevent counting errors; done by trial and error, I was always one file short on my quantity value
+    n = 1
+    # this will use the .iterdir() function of path to list the subdirectories of the folder_location path
+    for p in Path(folderLocation).iterdir():
+        # if the subdirectory is a file then increment quantity
+        if p.is_file():
+            n += 1
+
+    return n
+
 
 # testDirectory: directory where the files to test the SVM are located
-testDirectory = glob.glob("speakers/Amy/filesToTest/*.wav") + glob.glob("speakers/Scott/filesToTest/*.wav") \
-                + glob.glob("speakers/Matthew/filesToTest/*.wav")
+testDirectory = glob.glob("speakers/Amy/filesToTest/splits/*.wav") \
+                + glob.glob("speakers/Scott/filesToTest/splits/*.wav") \
+                + glob.glob("speakers/Matthew/filesToTest/splits/*.wav")
+
+numAmy = numFiles("speakers/Amy/filesToTest/splits/")
+numScott = numFiles("speakers/Scott/filesToTest/splits/")
+numMatthew = numFiles("speakers/Matthew/filesToTest/splits/")
+
+print("A: ", numAmy)
+print("S: ", numScott)
+print("M: ", numMatthew)
 
 AmyAVG = 0
 ScottAVG = 0
 MatthewAVG = 0
 i = 0
-
-
-def numFiles(folder_location):
-    # define our return variable, this one counts the number of files in a folder, so it is called quantity, start at
-    # one to prevent counting errors; done by trial and error, I was always one file short on my quantity value
-    quantity = 1
-    # this will use the .iterdir() function of path to list the subdirectories of the folder_location path
-    for path in Path(folder_location).iterdir():
-        # if the subdirectory is a file then increment quantity
-        if path.is_file():
-            quantity += 1
-
-    return quantity
 
 
 # function for truncating the percentages to display
@@ -44,17 +54,17 @@ for f in testDirectory:
 
     # Amy
     print(f"P({p_nam[0]} = {truncatePrecentage(p[0], 4)})")
-    if i >= 0 and i < 43:
+    if 0 <= i < numAmy:
         AmyAVG += truncatePrecentage(p[0], 4)
 
     # Scott
     print(f"P({p_nam[1]} = {truncatePrecentage(p[1], 4)})")
-    if i >= 43 and i < 97:
+    if numAmy <= i < numAmy + numScott:
         ScottAVG += truncatePrecentage(p[1], 4)
 
     # Matthew
     print(f"P({p_nam[2]} = {truncatePrecentage(p[2], 4)})")
-    if i >= 97 and i < 157:
+    if numAmy + numScott <= i < numAmy + numScott + numMatthew:
         MatthewAVG += truncatePrecentage(p[2], 4)
 
     i += 1
@@ -63,9 +73,9 @@ for f in testDirectory:
 # Calculate the averages
 # Number of test files are known
 print("\nCalculating Averages: ")
-AmyAVG = AmyAVG / 42
-ScottAVG = ScottAVG / 54
-MatthewAVG = MatthewAVG / 60
+AmyAVG = AmyAVG / numAmy
+ScottAVG = ScottAVG / numScott
+MatthewAVG = MatthewAVG / numMatthew
 
 # Final print statements
 print("Testing Amy's Files: ", AmyAVG)

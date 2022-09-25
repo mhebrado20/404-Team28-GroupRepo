@@ -56,7 +56,7 @@ testDirs = ["speakers/Amy/filesToTest/", "speakers/Scott/filesToTest/", "speaker
 
 # function for generating the files where d is the filepath from dirs or testDirs
 def genFiles(d):
-    print("\nd: ", d)  # test prints
+    # print("\nd: ", d)  # test prints
     # glob.glob() function creates a list of all files in that directory that end in .wav
     file = glob.glob(d + "*.wav")
 
@@ -67,7 +67,7 @@ def genFiles(d):
     for f in file:  # loop for each file in the directory where f is the exact filepath
         split_word = "\\"
         res_str = f.split(split_word)[1]
-        print("\nf: ", res_str)
+        # print("\nf: ", res_str)
         split_wav = AudioSplitter(d, res_str)  # call the AudioSplitter class with d (directory) and f (exact filepath)
         split_wav.multipleSplit(sec_per_split=1)  # call multipleSplit to split the audio segment on 1 second intervals
 
