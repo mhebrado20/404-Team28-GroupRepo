@@ -19,9 +19,10 @@ class AudioSplitter:
     # Set the initial values
     def __init__(self, dirs, filename):
         self.dirs = dirs  # declare the directory that the file is in
-        self.filename = filename #res_str  # parameter filename is the same as the full filepath
+        self.filename = filename  # res_str  # parameter filename is the same as the full filepath
         self.filepath = dirs + "splits/"
-        self.audio = AudioSegment.from_wav(self.dirs + self.filename)  # using pydub to get the whole audio segment at filepath
+        self.audio = AudioSegment.from_wav(
+            self.dirs + self.filename)  # using pydub to get the whole audio segment at filepath
 
     # returns the duration of the audio segment in seconds
     def getDuration(self):
