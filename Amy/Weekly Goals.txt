@@ -53,7 +53,8 @@ Lab 9/23
 			- Connected R8 to R14.
 			- Connected R14 to pin 6 of U6.
 			- Ring detection worked
-			- Ring suppression didn't work? -- I didn't have Ring pin connected to Ring.
+			- Ring suppression didn't work? -- I didn't have Ring pin connected to Ring, FirstRing needed to
+				be on high
 			- Phone pick up detection worked
 			- On/off hook detection worked
 			- Hook flash detection worked
@@ -68,3 +69,21 @@ Lab 9/23
 			- Connected R8 to R14.
 			- Connected R14 to pin 6 of U6.
 			- Phone pick up detection worked
+	Goals for next week:
+		1. Finish up debugging
+		2. Order PCB
+
+Lab 9/30
+	What I've done:
+		1. Make edits to schematic
+			- Drawn rectangles on board for each subcircuit
+			- Changed M1 to Q1
+			- Switched Q1 IRF530PBF to 2N7000
+			- Made sure capacitors were all ceramics
+			- Replaced resistors < 5% to 5% tolerance
+			- Added test points
+		2. Ordered PCB
+	Goals for next week:
+		1. Work with Scott to read audio out of DAC
+		2. Work on state machine code
+		
