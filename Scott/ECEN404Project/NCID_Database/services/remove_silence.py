@@ -12,6 +12,7 @@ def remove_silence(folder_location: str, file_name: str):
 
     # Segmentation
     fs, signal = wavfile.read(file_location + ".wav")
+    # print(fs)
     signal = signal / (2 ** 15)
     signal_len = len(signal)
     segment_size_t = 1  # segment size in seconds
@@ -29,6 +30,9 @@ def remove_silence(folder_location: str, file_name: str):
     # concatenate segments to signal:
     new_signal = np.concatenate(segments2)
 
+    if fs == 9600:  # hard coded bit rate of files we know will be mono audio
+        np.reshape(new_signal, new_signal.size)
+
     # create a new directory for the processed signal so that the original is not overwritten and the quantity of files
     # in the original is also maintained, this ensures you can upload the same data many times without errors
     if not Path(folder_location + "_processed").exists():
@@ -36,19 +40,21 @@ def remove_silence(folder_location: str, file_name: str):
 
     # write the data to the new file location with the appended string "_processed" to indicate that it is the processed
     # file
-    wavfile.write(folder_location + "_processed" + file_name + "_processed" + ".wav", fs, new_signal)
+    # fs = fs/2
+    wavfile.write(folder_location + "_processed" + file_name + "_processed" + ".wav", fs,
+                  new_signal.astype(np.float32))
 
     return new_signal
 
 
 print('Starting Amy\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/Closer to face test files', '/AmyCloserToFace')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/Original training files', '/Amy_Orig')
 print('Done with Amy\'s file')
 
 print('Starting Scott\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/Closer to face test files', '/ScottCloserToFace')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/Original training files', '/Scott_Orig')
 print('Done with Scott\'s file')
 
 print('Starting Matthew\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/Closer to face test files', '/MatthewCloserToFace')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/Original training files', '/Matthew_Orig')
 print('Done with Matthew\'s file')

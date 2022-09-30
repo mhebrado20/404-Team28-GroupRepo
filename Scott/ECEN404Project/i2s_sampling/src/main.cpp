@@ -99,10 +99,25 @@ void adcWriterTask(void *param)
   }
 }
 
-void setup()
+void initializeSerialPort()
 {
   Serial.begin(115200);
   Serial.println("Started up");
+}
+
+void startWriteToSerial()
+{
+  adcSampler = new ADCSampler(ADC_UNIT_1, ADC1_CHANNEL_7, adcI2SConfig);
+
+  // set up the adc sample writer task
+  TaskHandle_t adcWriterTaskHandle;
+  xTaskCreatePinnedToCore(adcWriterTask, "ADC Writer Task", 4096, adcSampler, 1, &adcWriterTaskHandle, 1);
+  adcSampler->start();
+}
+
+void setup()
+{
+  initializeSerialPort();
 
   // recording["audioData"] = "";
 
@@ -133,12 +148,7 @@ void setup()
   // internal analog to digital converter sampling using i2s
   // create our samplers
 
-  adcSampler = new ADCSampler(ADC_UNIT_1, ADC1_CHANNEL_7, adcI2SConfig);
-
-  // set up the adc sample writer task
-  TaskHandle_t adcWriterTaskHandle;
-  xTaskCreatePinnedToCore(adcWriterTask, "ADC Writer Task", 4096, adcSampler, 1, &adcWriterTaskHandle, 1);
-  adcSampler->start();
+  startWriteToSerial();
 }
 
 void loop()
