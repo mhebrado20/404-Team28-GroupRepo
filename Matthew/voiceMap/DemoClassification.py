@@ -31,10 +31,6 @@ numAmy = numFiles("speakers/Amy/filesToTest/splits/")
 numScott = numFiles("speakers/Scott/filesToTest/splits/")
 numMatthew = numFiles("speakers/Matthew/filesToTest/splits/")
 
-print("A: ", numAmy)
-print("S: ", numScott)
-print("M: ", numMatthew)
-
 AmyAVG = 0
 ScottAVG = 0
 MatthewAVG = 0
@@ -56,19 +52,26 @@ for f in testDirectory:
     print(f"P({p_nam[0]} = {truncatePrecentage(p[0], 4)})")
     if 0 <= i < numAmy:
         AmyAVG += truncatePrecentage(p[0], 4)
+        # print("AmyAVG: ", AmyAVG)
 
     # Scott
     print(f"P({p_nam[1]} = {truncatePrecentage(p[1], 4)})")
-    if numAmy <= i < numAmy + numScott:
+    if numAmy <= i < (numAmy + numScott):
         ScottAVG += truncatePrecentage(p[1], 4)
+        # print("ScottAVG: ", ScottAVG)
 
     # Matthew
     print(f"P({p_nam[2]} = {truncatePrecentage(p[2], 4)})")
-    if numAmy + numScott <= i < numAmy + numScott + numMatthew:
+    if (numAmy + numScott) <= i < (numAmy + numScott + numMatthew):
         MatthewAVG += truncatePrecentage(p[2], 4)
+        # print("MatthewAVG: ", MatthewAVG)
 
     i += 1
     print()
+
+# print("AmyAVG: ", AmyAVG)
+# print("ScottAVG: ", ScottAVG)
+# print("MatthewAVG: ", MatthewAVG)
 
 # Calculate the averages
 # Number of test files are known
@@ -76,6 +79,11 @@ print("\nCalculating Averages: ")
 AmyAVG = AmyAVG / numAmy
 ScottAVG = ScottAVG / numScott
 MatthewAVG = MatthewAVG / numMatthew
+
+print("A: ", numAmy)
+print("S: ", numScott)
+print("M: ", numMatthew)
+
 
 # Final print statements
 print("Testing Amy's Files: ", AmyAVG)

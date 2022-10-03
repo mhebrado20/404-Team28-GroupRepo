@@ -16,10 +16,10 @@ import plotly
 # dirs = ["speakers/Amy", "speakers/Scott"]
 
 # Amy & Matthew
-# dirs = ["speakers/Amy", "speakers/Matthew"]
+# dirs = ["speakers/Amy//", "speakers/Matthew"]
 
 # Scott & Matthew
-dirs = ["speakers/Matthew", "speakers/Scott"]
+dirs = ["speakers/Matthew/splits", "speakers/Scott/splits"]
 
 class_names = [os.path.basename(d) for d in dirs]  # set class names to be the folder titles
 

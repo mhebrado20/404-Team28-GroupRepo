@@ -4,7 +4,7 @@ Does feature extraction and generates an SVM classification file
 
 from pyAudioAnalysis.audioTrainTest import extract_features_and_train
 
-m_step, s_step = 0.05, 0.05  # set midterm-step and short-term step
+m_step, s_step = 0.05, 0.05  # set midterm-step and short-term step orig
 # dirs: directory where the files to train the SVM are located
 dirs = ["speakers/Amy/splits/", "speakers/Scott/splits/", "speakers/Matthew/splits/"]
 
