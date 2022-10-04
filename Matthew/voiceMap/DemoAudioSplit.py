@@ -14,13 +14,24 @@ import glob
 import os
 from pathlib import Path
 
+def numFiles(folderLocation):
+    # define our return variable, this one counts the number of files in a folder, so it is called quantity, start at
+    # one to prevent counting errors; done by trial and error, I was always one file short on my quantity value
+    n = 1
+    # this will use the .iterdir() function of path to list the subdirectories of the folder_location path
+    for p in Path(folderLocation).iterdir():
+        # if the subdirectory is a file then increment quantity
+        if p.is_file():
+            n += 1
+
+    return n
 
 class AudioSplitter:
     # Set the initial values
     def __init__(self, dirs, filename):
         self.dirs = dirs  # declare the directory that the file is in
         self.filename = filename  # res_str  # parameter filename is the same as the full filepath
-        self.filepath = dirs + "splits/"
+        self.filepath = dirs + "splits" + str(numFiles(dirs)) + "/"
         self.audio = AudioSegment.from_wav(
             self.dirs + self.filename)  # using pydub to get the whole audio segment at filepath
 
@@ -52,7 +63,7 @@ class AudioSplitter:
 
 
 dirs = ["speakers/Amy/", "speakers/Scott/", "speakers/Matthew/"]
-testDirs = ["speakers/Amy/filesToTest/", "speakers/Scott/filesToTest/", "speakers/Matthew/filesToTest/"]
+testDirs = ["speakers/filesToTest/"]
 
 
 # function for generating the files where d is the filepath from dirs or testDirs
