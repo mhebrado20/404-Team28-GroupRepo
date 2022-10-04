@@ -1,8 +1,32 @@
 Matthew Hebrado
 827003132
 
-Lab Date 9/1
+Lab Date 9/9
+In this past week:
+1) I successfully got the code integrated onto the pi and it works
+2) Though of ideas on how to account for a new voice being passed as an input
+
 Goals for next week:
-1) I plan to finish implementing my code onto my pi.
-2) Additionally, I am going to work on my ML code to account for unknown voices to be passed through the system.
+1) Before next presentation I will finish that bit of remaining code
+2) Additionally I will work with Scott with integration and interaction with the database
+
+
+
+
+
+
+
+
+
+
+Lab Date 9/1
+In this past week:
+1) I have begun setting up my pi to run the python code that I've written in 403
+    This was a little difficult because I had to debug my pi. I had to reformat the SD card
+    and do a fresh install.
+
+Goals for next week:
+1) I plan to get python running on my pi with the correct version to ensure the code will work (python ver 3.9.12)
+2) I'm going to run the python code to see if it works.
+3) Additionally, I want to start working on my ML code to account for unknown voices to be passed through the system.
    As of right now I am still figuring out a way to tackle this issue.

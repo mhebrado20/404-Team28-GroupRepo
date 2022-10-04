@@ -10,4 +10,6 @@ tqdm==4.52.0
 plotly==5.3.1
 pandas==1.2.4
 imblearn
-pyaudioanalysis
+pyAudioAnalysis
+opencv-python
+
