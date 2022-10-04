@@ -17,7 +17,7 @@ from pathlib import Path
 def numFiles(folderLocation):
     # define our return variable, this one counts the number of files in a folder, so it is called quantity, start at
     # one to prevent counting errors; done by trial and error, I was always one file short on my quantity value
-    n = 1
+    n = 0
     # this will use the .iterdir() function of path to list the subdirectories of the folder_location path
     for p in Path(folderLocation).iterdir():
         # if the subdirectory is a file then increment quantity
