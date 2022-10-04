@@ -48,13 +48,13 @@ def remove_silence(folder_location: str, file_name: str):
 
 
 print('Starting Amy\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/Original training files', '/Amy_Orig')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/original test files', '/Amy_Test')
 print('Done with Amy\'s file')
 
 print('Starting Scott\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/Original training files', '/Scott_Orig')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/original test files', '/Scott_Test')
 print('Done with Scott\'s file')
 
 print('Starting Matthew\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/Original training files', '/Matthew_Orig')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/original test files', '/Matthew_Test')
 print('Done with Matthew\'s file')

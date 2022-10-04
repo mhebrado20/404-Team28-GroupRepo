@@ -16,6 +16,10 @@
 ADCSampler *adcSampler = NULL;
 I2SSampler *i2sSampler = NULL;
 
+int SineValues[256];
+float ConversionFactor=(2*PI)/256;
+float RadAngle;
+
 // DynamicJsonDocument recording(2048);
 
 // replace this with your machines IP Address
@@ -115,9 +119,21 @@ void startWriteToSerial()
   adcSampler->start();
 }
 
+void dacSineConversion()
+{
+  for(int i=0;i<256;i++)
+    dacWrite(25,SineValues[i]);
+}
+
 void setup()
 {
   initializeSerialPort();
+
+  for(int MyAngle=0;MyAngle<256;MyAngle++) 
+  {
+    RadAngle=MyAngle * ConversionFactor;
+    SineValues[MyAngle]=(sin(RadAngle)*127)+128;
+  }
 
   // recording["audioData"] = "";
 
@@ -148,10 +164,11 @@ void setup()
   // internal analog to digital converter sampling using i2s
   // create our samplers
 
-  startWriteToSerial();
+  //startWriteToSerial();
 }
 
 void loop()
 {
   // nothing to do here - everything is taken care of by tasks
+  dacSineConversion();
 }
