@@ -7,6 +7,7 @@ a final average confidence interval
 from pyAudioAnalysis import audioTrainTest as aTT
 import glob
 from pathlib import Path
+import os
 
 
 def numFiles(folderLocation):
@@ -21,19 +22,24 @@ def numFiles(folderLocation):
 
     return n
 
+testDirs = []
+
+for root, dirs, files in os.walk("speakers/filesToTest/"):
+    for name in dirs:
+        testDirs.append("speakers/filesToTest/" + name + "/")
 
 # testDirectory: directory where the files to test the SVM are located
-testDirectory = glob.glob("speakers/Amy/filesToTest/splits/*.wav") \
-                + glob.glob("speakers/Scott/filesToTest/splits/*.wav") \
-                + glob.glob("speakers/Matthew/filesToTest/splits/*.wav")
+testDirectory = []
+for n in testDirs:
+    testDirectory += glob.glob(n + "*.wav")
 
-numAmy = numFiles("speakers/Amy/filesToTest/splits/")
-numScott = numFiles("speakers/Scott/filesToTest/splits/")
-numMatthew = numFiles("speakers/Matthew/filesToTest/splits/")
+numAmy = numFiles(testDirs[0])
+numMatthew = numFiles(testDirs[1])
+numScott = numFiles(testDirs[2])
 
 AmyAVG = 0
-ScottAVG = 0
 MatthewAVG = 0
+ScottAVG = 0
 i = 0
 
 
@@ -50,45 +56,45 @@ for f in testDirectory:
 
     # Amy
     print(f"P({p_nam[0]} = {truncatePrecentage(p[0], 4)})")
-    if 0 <= i < numAmy:
+    if 0 < i <= numAmy:
         AmyAVG += truncatePrecentage(p[0], 4)
-        # print("AmyAVG: ", AmyAVG)
-
-    # Scott
-    print(f"P({p_nam[1]} = {truncatePrecentage(p[1], 4)})")
-    if numAmy <= i < (numAmy + numScott):
-        ScottAVG += truncatePrecentage(p[1], 4)
-        # print("ScottAVG: ", ScottAVG)
+        print("AmyAVG: ", AmyAVG)
 
     # Matthew
+    print(f"P({p_nam[1]} = {truncatePrecentage(p[1], 4)})")
+    if numAmy < i <= (numAmy + numMatthew):
+        MatthewAVG += truncatePrecentage(p[1], 4)
+        print("MatthewAVG: ", MatthewAVG)
+
+    # Scott
     print(f"P({p_nam[2]} = {truncatePrecentage(p[2], 4)})")
-    if (numAmy + numScott) <= i < (numAmy + numScott + numMatthew):
-        MatthewAVG += truncatePrecentage(p[2], 4)
-        # print("MatthewAVG: ", MatthewAVG)
+    if (numAmy + numMatthew) < i <= (numAmy + numMatthew + numScott):
+        ScottAVG += truncatePrecentage(p[2], 4)
+        print("ScottAVG: ", ScottAVG)
 
     i += 1
     print()
 
-# print("AmyAVG: ", AmyAVG)
-# print("ScottAVG: ", ScottAVG)
-# print("MatthewAVG: ", MatthewAVG)
+print("AmyAVG: ", AmyAVG)
+print("MatthewAVG: ", MatthewAVG)
+print("ScottAVG: ", ScottAVG)
 
 # Calculate the averages
 # Number of test files are known
 print("\nCalculating Averages: ")
 AmyAVG = AmyAVG / numAmy
-ScottAVG = ScottAVG / numScott
 MatthewAVG = MatthewAVG / numMatthew
+ScottAVG = ScottAVG / numScott
 
 print("A: ", numAmy)
-print("S: ", numScott)
 print("M: ", numMatthew)
+print("S: ", numScott)
 
 
 # Final print statements
 print("Testing Amy's Files: ", AmyAVG)
-print("Testing Scott's Files: ", ScottAVG)
 print("Testing Matthew's Files: ", MatthewAVG)
+print("Testing Scott's Files: ", ScottAVG)
 
 """
 file_classification looks for a file called "svm_all" with the classification type of

@@ -28,10 +28,10 @@ def numFiles(folderLocation):
 
 class AudioSplitter:
     # Set the initial values
-    def __init__(self, dirs, filename):
+    def __init__(self, dirs, filename, n):
         self.dirs = dirs  # declare the directory that the file is in
         self.filename = filename  # res_str  # parameter filename is the same as the full filepath
-        self.filepath = dirs + "splits" + str(numFiles(dirs)) + "/"
+        self.filepath = dirs + "splits" + str(n) + "/"
         self.audio = AudioSegment.from_wav(
             self.dirs + self.filename)  # using pydub to get the whole audio segment at filepath
 
@@ -45,8 +45,9 @@ class AudioSplitter:
         t2 = to_sec * 1000
         # print("filepath: " + self.filepath)
         split_audio = self.audio[t1:t2]  # get a time interval from t1 and t2
-        Path(self.filepath).mkdir(parents=True, exist_ok=True)
-        split_audio.export(self.filepath + '\\' + split_filename, format="wav")
+        for n in range(numFiles(self.dirs)):
+            Path(self.filepath).mkdir(parents=True, exist_ok=True)
+            split_audio.export(self.filepath + '\\' + split_filename, format="wav")
         # export that split as a .wav file with the name of split_filename
         # sent to it from the function call
 
@@ -62,7 +63,7 @@ class AudioSplitter:
                 print('All split successfully')
 
 
-dirs = ["speakers/Amy/", "speakers/Scott/", "speakers/Matthew/"]
+dirs = ["speakers/Amy/", "speakers/Matthew/", "speakers/Scott/"]
 testDirs = ["speakers/filesToTest/"]
 
 
@@ -71,7 +72,7 @@ def genFiles(d):
     # print("\nd: ", d)  # test prints
     # glob.glob() function creates a list of all files in that directory that end in .wav
     file = glob.glob(d + "*.wav")
-
+    n = 1
     # the reason I chose to do it with glob.glob() is for use in 404 integration; when a user uploads a file to a
     # directory, they can just select the directory and the .wav file won't need to be called anything specific
     # as long as its placed in the right directory it will automatically find the file and split it up
@@ -80,8 +81,10 @@ def genFiles(d):
         split_word = "\\"
         res_str = f.split(split_word)[1]
         # print("\nf: ", res_str)
-        split_wav = AudioSplitter(d, res_str)  # call the AudioSplitter class with d (directory) and f (exact filepath)
+        split_wav = AudioSplitter(d, res_str, n)  # call the AudioSplitter class with d (directory) and
+        # f (exact filepath)
         split_wav.multipleSplit(sec_per_split=1)  # call multipleSplit to split the audio segment on 1 second intervals
+        n += 1
 
 
 # generate files to train SVM
