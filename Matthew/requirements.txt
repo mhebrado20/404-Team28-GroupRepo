@@ -1,7 +1,7 @@
 matplotlib==3.4.2
 simplejson==3.16.0
 scipy==1.7.2
-
+pathlib
 hmmlearn==0.2.5
 eyed3==0.9.6
 pydub==0.25.1
