@@ -1,8 +1,9 @@
-# from calls import Call
-# import obtain_call_length as ocl
-# from remove_silence import remove_silence
-# from pathlib import Path
-import mongoengine
+from Scott.ECEN404Project.NCID_Database.services.calls import Call
+import Scott.ECEN404Project.NCID_Database.services.obtain_call_length as ocl
+from Scott.ECEN404Project.NCID_Database.services.remove_silence import remove_silence
+from pathlib import Path
+
+
 # from data.incoming_callers import IncomingCaller
 # from data.receiving_callers import ReceivingCaller
 # from data.recordings import Recording
@@ -111,9 +112,12 @@ def num_files(folder_location):
 def upload_folder(folder_location: str, file_name: str, database="NCID_local_DB", host="127.0.0.1"):
 
     # Check that user input was correct
+
+    """
     if not error_check(folder_location, file_name):
         print("This folder or file path does not exist. Make sure the path was typed correctly.\n")
         return
+    """
 
     # Get the number of files in the folder path given
     quantity = num_files(folder_location)
@@ -141,58 +145,58 @@ def upload_folder(folder_location: str, file_name: str, database="NCID_local_DB"
 
         # TODO: reimplement this function in 404 when audio recording subsystem is integrated to match naming scheme
 
-        # if x < 10:
-        #    # Get creation date of file
-        #    call.date_of_call = ocl.creation_date(folder_location, file_name + "00" + str(x) + ".wav")
-        #    # Set unmodified file length of call
-        #    call.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + "00" + str(x))
-        #    # Remove silence
-        #    remove_silence(folder_location, "/" + file_name + "00" + str(x))
-        #    # Set the length of call with silence removed
-        #    call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name + "00"
-        #                                                        + str(x) + "_processed")
-        #    # Set file name as specified by user
-        #    call.file_name = file_name + str(x)
-        #    # Upload the recording to the database
-        #    call.upload_recording(folder_location + "_processed" + "/" + file_name + "00" + str(x) + "_processed.wav",
-        #                          database, host)
-
-        #    # print("length of call: ", call.original_length_of_call)
-        #    print("file name: ", call.file_name, "\n")
-
-        # elif 9 < x < 100:
-        #    # Get creation date of file
-        #    call.date_of_call = ocl.creation_date(folder_location, file_name + "0" + str(x) + ".wav")
-        #    # Set unmodified file length of call
-        #    call.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + "0" + str(x))
-        #    # Remove silence
-        #    remove_silence(folder_location, "/" + file_name + "0" + str(x))
-        #    # Set the length of call with silence removed
-        #    call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name + "0"
-        #                                                        + str(x) + "_processed")
-        #    # Set file name as specified by user
-        #    call.file_name = file_name + str(x)
-        #    # Upload the recording to the database
-        #    call.upload_recording(folder_location + "_processed" + "/" + file_name + "0" + str(x) + "_processed.wav",
-        #                          database, host)
-
-        #    # print("length of call: ", call.original_length_of_call)
-        #    print("file name: ", call.file_name, "\n")
-
-        # else:
-        # Get creation date of file
-        call.date_of_call = ocl.creation_date(folder_location, file_name + str(x) + ".wav")
-        # Set unmodified file length of call
-        call.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + str(x))
-        # Remove silence
-        remove_silence(folder_location, "/" + file_name + str(x))
-        # Set the length of call with silence removed
-        call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name
+        if x < 10:
+            # Get creation date of file
+            call.date_of_call = ocl.creation_date(folder_location, file_name + "00" + str(x) + ".wav")
+            # Set unmodified file length of call
+            call.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + "00" + str(x))
+            # Remove silence
+            remove_silence(folder_location, "/" + file_name + "00" + str(x))
+            # Set the length of call with silence removed
+            call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name + "00"
                                                                 + str(x) + "_processed")
-        # Set file name as specified by user
-        call.file_name = file_name + str(x)
-        # Upload the recording to the database
-        call.upload_recording(folder_location + "_processed" + "/" + file_name + str(x) + "_processed.wav",
+            # Set file name as specified by user
+            call.file_name = file_name + str(x)
+            # Upload the recording to the database
+            call.upload_recording(folder_location + "_processed" + "/" + file_name + "00" + str(x) + "_processed.wav",
+                                  database, host)
+
+            # print("length of call: ", call.original_length_of_call)
+            print("file name: ", call.file_name, "\n")
+
+        elif 9 < x < 100:
+            # Get creation date of file
+            call.date_of_call = ocl.creation_date(folder_location, file_name + "0" + str(x) + ".wav")
+            # Set unmodified file length of call
+            call.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + "0" + str(x))
+            # Remove silence
+            remove_silence(folder_location, "/" + file_name + "0" + str(x))
+            # Set the length of call with silence removed
+            call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name + "0"
+                                                                + str(x) + "_processed")
+            # Set file name as specified by user
+            call.file_name = file_name + str(x)
+            # Upload the recording to the database
+            call.upload_recording(folder_location + "_processed" + "/" + file_name + "0" + str(x) + "_processed.wav",
+                                  database, host)
+
+            # print("length of call: ", call.original_length_of_call)
+            print("file name: ", call.file_name, "\n")
+
+        else:
+            # Get creation date of file
+            call.date_of_call = ocl.creation_date(folder_location, file_name + str(x) + ".wav")
+            # Set unmodified file length of call
+            call.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + str(x))
+            # Remove silence
+            remove_silence(folder_location, "/" + file_name + str(x))
+            # Set the length of call with silence removed
+            call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name
+                                                                + str(x) + "_processed")
+            # Set file name as specified by user
+            call.file_name = file_name + str(x)
+            # Upload the recording to the database
+            call.upload_recording(folder_location + "_processed" + "/" + file_name + str(x) + "_processed.wav",
                                   database, host)
 
         # print("length of call: ", call.original_length_of_call)
