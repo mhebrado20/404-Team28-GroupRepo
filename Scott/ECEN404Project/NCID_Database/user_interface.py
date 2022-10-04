@@ -1,13 +1,13 @@
 # from typing import List, Optional
-from Scott.ECEN404Project.NCID_Database.services.calls import Call
+from services.calls import Call
 from pathlib import Path
 from playsound import playsound
 # from data.incoming_callers import IncomingCaller
 # from data.receiving_callers import ReceivingCaller
 # from data.recordings import Recording
-import src.services.upload_data as ud
-from src.infrastructure.switchlang import switch
-import src.infrastructure.state as state
+import services.upload_data as ud
+from services.switchlang import switch
+import services.state as state
 
 
 def run():
