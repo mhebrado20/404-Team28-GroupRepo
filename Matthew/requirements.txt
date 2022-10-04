@@ -12,3 +12,4 @@ pandas==1.2.4
 imblearn
 pyAudioAnalysis
 opencv-python
+
