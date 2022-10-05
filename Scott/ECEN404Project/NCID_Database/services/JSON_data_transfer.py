@@ -2,10 +2,13 @@ import json
 import serial
 import wave
 import pyaudio
-from upload_data import num_files
+from Scott.ECEN404Project.NCID_Database.services.upload_data import num_files
+from datetime import datetime
+from datetime import date
 
 
-def record_audio(port: str, filelocation: str, samplerate: int = 9600, chunk: int = 1024, baudrate: int = 115200):
+def record_audio(port: str, filelocation: str, samplerate: int = 9600, chunk: int = 1024,
+                 baudrate: int = 115200):
     connection = serial.Serial(port=port, baudrate=baudrate)
     connection.reset_input_buffer()
 
@@ -49,4 +52,33 @@ def record_audio(port: str, filelocation: str, samplerate: int = 9600, chunk: in
     sf.close()
 
 
-record_audio('COM3', 'C:/Users/sky20/Desktop/serialrecording')
+# record_audio('COM3', 'C:/Users/sky20/Desktop/serialrecording')
+
+
+def ncid_msg_print(confidence_value: float, host="127.0.0.1", port="3334"):
+    # confidence_value = this will be from matthews output code
+    # TCPIP socket
+    # 2ncid gateway clients
+    # catch exceptions for improperly closed ports
+    time_now = datetime.now()
+    current_time = time_now.strftime("%H:%M")
+    date_now = date.today()
+    current_date = date_now.strftime("%m/%d/%y")
+    if confidence_value > 75:
+        print(r"MSG: <NCID-Defender has detected that the caller is on the NCID-Defender voicematch whitelist; ACCURACY:"
+              + str(confidence_value) + "%> "
+              r"###DATE*<" + current_date + ">"
+              r"*TIME*<" + current_time + ">"
+              r"*LINE*<->"
+              "*NMBR\*<->\\"
+              r"*MTYPE*SYS"
+              r"*NAME*<NCID-Defender>*")
+    elif confidence_value < 75:
+        print(r"MSG: <NCID-Defender has detected that the caller is not on the NCID-Defender voicematch whitelist; ACCURACY:"
+              + str(confidence_value) + "%> "
+              r"###DATE*<" + current_date + ">"
+              r"*TIME*<" + current_time + ">"
+              r"*LINE*<->"
+              "*NMBR\*<->\\"
+              r"*MTYPE*SYS"
+              r"*NAME*<NCID-Defender>*")

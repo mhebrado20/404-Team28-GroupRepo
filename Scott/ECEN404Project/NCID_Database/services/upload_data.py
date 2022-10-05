@@ -1,4 +1,4 @@
-from Scott.ECEN404Project.NCID_Database.services.calls import Call
+import Scott.ECEN404Project.NCID_Database.services.calls as call
 import Scott.ECEN404Project.NCID_Database.services.obtain_call_length as ocl
 from Scott.ECEN404Project.NCID_Database.services.remove_silence import remove_silence
 from pathlib import Path
@@ -15,7 +15,7 @@ from pathlib import Path
 
 def retrieve_recording(file_location: str, name: str, database='NCID_local_DB', host='127.0.0.1'):
     # Find the first object in database with file_name=name
-    data = Call.objects(file_name=name).first()
+    data = call.Call.objects(file_name=name).first()
     # error check
     if data is None:
         print("This file does not exist in the database, please try again.")
@@ -58,7 +58,7 @@ def delete_database_recordings(name: str, database='NCID_local_DB', host='127.0.
         # Assign database object to variable, this is only the first object by this name, if there are multiple objects
         # by the same name only the first will be deleted, if full object deletion is wanted then the code must be
         # slightly altered
-        file_to_delete = Call.objects(file_name=name).first()
+        file_to_delete = call.Call.objects(file_name=name).first()
         # Make sure the file was actually retrieved, if it does not exist in the database the variable will be type
         # NoneType, so we check if the variable is NoneType here
         if file_to_delete is None:
@@ -109,21 +109,22 @@ def num_files(folder_location):
     return quantity
 
 
-def upload_folder(folder_location: str, file_name: str, database="NCID_local_DB", host="127.0.0.1"):
+def upload_folder(folder_location: str, write_location, file_name: str, connection, database="core", host="127.0.0.1"):
 
     # Check that user input was correct
-
-    """
-    if not error_check(folder_location, file_name):
+    if not error_check(folder_location, file_name + '1'):
         print("This folder or file path does not exist. Make sure the path was typed correctly.\n")
         return
-    """
 
     # Get the number of files in the folder path given
     quantity = num_files(folder_location)
 
-    for x in range(1, quantity):
+    # connection = mongoengine.connect(database, host='127.0.0.1', port=27017)
 
+    for x in range(1, quantity):
+        # This is a call class creation in order to ensure that each file is uploaded as a unique call
+        call1 = call.Call()
+        """
         # Should have NCID variables fed to the call here from NCID API
 
         # This is a call class creation in order to ensure that each file is uploaded as a unique call
@@ -184,20 +185,35 @@ def upload_folder(folder_location: str, file_name: str, database="NCID_local_DB"
             print("file name: ", call.file_name, "\n")
 
         else:
-            # Get creation date of file
-            call.date_of_call = ocl.creation_date(folder_location, file_name + str(x) + ".wav")
-            # Set unmodified file length of call
-            call.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + str(x))
-            # Remove silence
-            remove_silence(folder_location, "/" + file_name + str(x))
-            # Set the length of call with silence removed
-            call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name
-                                                                + str(x) + "_processed")
-            # Set file name as specified by user
-            call.file_name = file_name + str(x)
-            # Upload the recording to the database
-            call.upload_recording(folder_location + "_processed" + "/" + file_name + str(x) + "_processed.wav",
-                                  database, host)
+        """
+        # Get creation date of file
+        call1.date_of_call = ocl.creation_date(folder_location, file_name + str(x) + ".wav")
+        # Set unmodified file length of call
+        call1.original_length_of_call = ocl.obtain_length_of_call(folder_location + "/" + file_name + str(x))
+        # Remove silence
+        remove_silence(folder_location, write_location, "/" + file_name + str(x))
+        # Set the length of call with silence removed
+        # call.new_length_of_call = ocl.obtain_length_of_call(folder_location + "_processed" + "/" + file_name
+        #                                                     + str(x) + "_processed")
+        # Set file name as specified by user
+
+        print(hasattr(connection, 'calls'))
+        if hasattr(connection, 'calls'):
+            num_files_collection = connection.database.calls.count_documents({})
+            call1.file_name = file_name + str(num_files_collection + 1)
+        else:
+            call1.file_name = file_name + str(x)
+
+        """
+        last_doc = connection.core.getLastInsertedDocument.find({}).sort("_id", -1).limit(1)
+        doc_num = last_doc.document_number
+        call1.file_name = file_name + str(doc_num)
+        call1.document_number = doc_num + 1
+        """
+
+        # Upload the recording to the database
+        call1.upload_recording(folder_location + "/" + call1.file_name + ".wav",
+                               database, host)
 
         # print("length of call: ", call.original_length_of_call)
-        print("file name: ", call.file_name, "\n")
+        print("file name: ", call1.file_name, "\n")
