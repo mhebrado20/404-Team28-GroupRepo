@@ -86,4 +86,9 @@ Lab 9/30
 	Goals for next week:
 		1. Work with Scott to read audio out of DAC
 		2. Work on state machine code
-		
+
+
+Lab 10/7:
+	What I've done:
+		1. Successfully inputted Scot's audio code into DAC
+			- Noticed some clipping at output with 3.2 Vpp

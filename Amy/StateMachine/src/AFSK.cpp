@@ -19,9 +19,11 @@ void endTimer();
 void getADCSample();
 
 // a pointer variable timer of the type hw_timer_t in order to configure the timer
-hw_timer_t *timer = NULL;
+hw_timer_t *afskTimer = NULL;
+portMUX_TYPE afskTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
-void onTimer(){
+void IRAM_ATTR onTimer(){ 
+  portENTER_CRITICAL_ISR(&afskTimerMux);
   static unsigned int timeCounter = 1;
 
   Serial.print("onTimer ");
@@ -36,22 +38,23 @@ void onTimer(){
   }
 
   timeCounter++;
+  portEXIT_CRITICAL_ISR(&afskTimerMux);
 }
 
 void startTimer() {
   Serial.println("Start timer");
   // timer 0, CP = 1 ns, count up
-  timer = timerBegin(0, 80, true);
+  afskTimer = timerBegin(0, 80, true);
   // edge triggered
-  timerAttachInterrupt(timer, &onTimer, true);
+  timerAttachInterrupt(afskTimer, &onTimer, true);
   // 1 s
-  timerAlarmWrite(timer, 1000000, true);
-  timerAlarmEnable(timer);
+  timerAlarmWrite(afskTimer, 1000000, true);
+  timerAlarmEnable(afskTimer);
 }
 
 void endTimer() {
-  timerEnd(timer);
-  timer = NULL;
+  timerEnd(afskTimer);
+  afskTimer = NULL;
   Serial.println("Timer stopped.");
 }
 

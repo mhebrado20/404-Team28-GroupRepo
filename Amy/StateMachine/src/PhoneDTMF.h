@@ -27,8 +27,7 @@ Released into the public domain.
 //#define DTMF_DEBUG
 
 // library interface description
-class PhoneDTMF
-{
+class PhoneDTMF {
 private:
   static const uint8_t  TONES = 8;
   const uint16_t DTMF_TONES[TONES] =
@@ -42,38 +41,86 @@ private:
      1477,
      1633
     };
-  const uint8_t  DTMF_MAP[TONES * 2] = {0x11,0x21,0x41,0x12,0x22,0x42,0x14,0x24,0x44,0x28,0x81,0x82,0x84,0x88,0x18,0x48};
-  const char  DTMF_CHAR[TONES * 2] =   { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'A', 'B', 'C', 'D', '*', '#'};
-    // Number of samples to detect tone (normally from 50 to 200)
+  
+  // Creating the map of tones and associate them with the characters on the phone
+  const uint8_t  DTMF_MAP[TONES * 2] = {
+    0x11,
+    0x21,
+    0x41,
+    0x12,
+    0x22,
+    0x42,
+    0x14,
+    0x24,
+    0x44,
+    0x28,
+    0x81,
+    0x82,
+    0x84,
+    0x88,
+    0x18,
+    0x48
+  };
+  const char  DTMF_CHAR[TONES * 2] = {
+    '1', 
+    '2', 
+    '3', 
+    '4', 
+    '5', 
+    '6', 
+    '7', 
+    '8', 
+    '9', 
+    '0', 
+    'A', 
+    'B', 
+    'C', 
+    'D', 
+    '*', 
+    '#'
+  };
+
+  // Number of samples to detect tone (normally from 50 to 200)
   int16_t	_iSamplesCount;
-	  // Maximal frequence for sampling => is calculated in the Init function
-    // Note: this should be at least 6000Hz, since the measurement is done with this frequence
-  uint32_t	_iSamplesFrequence;
-	// The real sampling frequence from the last measurement
-  uint32_t  _iRealFrequence;
-	// If the real frequence is not like expected, a compensation delay is applied
-  uint16_t	_iCompensation;
-	// For detecting the tone, coefficient must be calculated => done in the Init function
-  float		_afToneCoeff[TONES];
-	// Q for each tone, to find out which frequence has detected. It will be reset in the resetDTMF function
-  float		_afQ1[TONES];
-	// Q for each tone, to find out which frequence has detected. It will be reset in the resetDTMF function
-  float		_afQ2[TONES];
-	// Pin used for the analog to digital conversion
+	
+  // Maximal frequence for sampling => is calculated in the Init function
+  // Note: this should be at least 6000Hz, since the measurement is done with this frequence
+  uint32_t _iSamplesFrequence;
+	
+  // The real sampling frequence from the last measurement
+  uint32_t _iRealFrequence;
+	
+  // If the real frequence is not like expected, a compensation delay is applied
+  uint16_t _iCompensation;
+	
+  // For detecting the tone, coefficient must be calculated => done in the Init function
+  float _afToneCoeff[TONES];
+	
+  // Q for each tone, to find out which frequence has detected. It will be reset in the resetDTMF function
+  float _afQ1[TONES];
+	
+  // Q for each tone, to find out which frequence has detected. It will be reset in the resetDTMF function
+  float _afQ2[TONES];
+	
+  // Pin used for the analog to digital conversion
   uint8_t	_Pin;
-	// The value of ADC if nothing is detected (or in stand by) => this is calculated in the Init function
+	
+  // The value of ADC if nothing is detected (or in stand by) => this is calculated in the Init function
   int16_t	_iAdcCentre;
-  float		_fAdcCentre;
-	// Magnitude if nothing is detected (or in stand by) => calculated in the Init function
-  float		_fBaseMagnitude;
-    // Amplify measured signal, so it will be detected better (only if the signal does not cover the full amplitude)
-  float     _fAmplifier;
+  float _fAdcCentre;
+	
+  // Magnitude if nothing is detected (or in stand by) => calculated in the Init function
+  float _fBaseMagnitude;
+  
+  // Amplify measured signal, so it will be detected better (only if the signal does not cover the full amplitude)
+  float _fAmplifier;
+
 #ifdef DTMF_DEBUG
   uint16_t  _aiAnalogData[128];
   uint8_t	_iDataIndex;
 #endif
   
-  // user-accessible "public" interface
+// user-accessible "public" interface
 public:
     
   PhoneDTMF(int16_t sampleCount = 128, float amplifier = 1.0f);
@@ -91,7 +138,7 @@ public:
   uint16_t* getMeasurements();
 #endif
   
-  // library-accessible "private" interface
+// library-accessible "private" interface
 private:
   //El_Supremo change to int
   void ProcessSample(int16_t);

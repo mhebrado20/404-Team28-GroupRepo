@@ -17,6 +17,8 @@
 #define ADC1_PIN 32
 #define RING_PIN 35
 #define FIRSTRING_PIN 26
+// analog input pin might be implemented later
+// #define ANALOGINPUT_PIN 34
 
 // define states
 #define ONHOOK_NOCALL 1
@@ -62,15 +64,58 @@ char versionNum[] = "SCID ESP32 Decoding v1.0";
 Afsk modemTST;
 PhoneDTMF dtmf = PhoneDTMF();
 
-void phoneState1() {
+/************* Call Timer *************/
+hw_timer_t *adcTimer = NULL;
+portMUX_TYPE adcTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
+void IRAM_ATTR onTimer(){ 
+  portENTER_CRITICAL_ISR(&adcTimerMux);
+  static unsigned int timeCounter = 1;
+
+  Serial.print("onTimer ");
+  Serial.print(timeCounter);
+  Serial.print(" at ");
+  Serial.print(millis());
+  Serial.println(" ms");
+
+  // need to change if statement
+  if (timeCounter == 10) {
+    endTimer();
+  }
+
+  timeCounter++;
+  portEXIT_CRITICAL_ISR(&adcTimerMux);
+}
+
+void startTimer() {
+  Serial.println("Start timer");
+  // timer 0, CP = 1 ns, count up
+  adcTimer = timerBegin(0, 80, true);
+  // edge triggered
+  timerAttachInterrupt(adcTimer, &onTimer, true);
+  // 1 s
+  timerAlarmWrite(adcTimer, 1000000, true);
+  timerAlarmEnable(adcTimer);
+}
+
+void endTimer() {
+  timerEnd(adcTimer);
+  adcTimer = NULL;
+  Serial.println("Timer stopped.");
+}
+
+void phoneState1() {
   if (ring == HIGH) {
-        // suppress 1st first ring
-        // CID state machine
-        //    1. channel seizure tones to mark
-        //    2. AFSK demodulataor
-        //    3. decode cid packet
-        //    4. send info to NCID
+        /************* Initial ring supression *************/
+        // initial ring is suppressed, now let the phone continue ringging after a delay
+        delay(1000);
+        digitalWrite(FIRSTRING_PIN, LOW);
+
+        /************* CID state machine *************/
+        // 1. channel seizure tones to mark
+        // 2. AFSK demodulataor
+        // 3. decode cid packet
+        // 4. send info to NCID
         static DemodState_t state_last;
         static bool setupRun = false;
 
@@ -115,6 +160,7 @@ void phoneState1() {
           lastUtlityRun = ms ;
         }
 
+        // begin CID state machine
         switch (AFSKState) {
           case AFSK_READY:
             AFSKState1(state_last, ms);
@@ -136,6 +182,7 @@ void phoneState1() {
           default:
             AFSKState = AFSK_READY;
         }
+
         // if matches with NCID blacklist,
         //    HUP (send a fax tone packet through pin D25)
         // else
@@ -154,22 +201,16 @@ void phoneState1() {
       // report to NCID
     }
   }
-
 }
 
 void AFSKState1(DemodState_t lastState, uint32_t mstime) {
-
   if (modemTST.demodState == dmREADY) {
-
     if (lastState != dmREADY) {
-
       if (debugMode > 1) {
         Serial.println(F("\n\n == == == == == == == == "));
         Serial.print(F("\n > dmREADY"));
       }
-
     }
-
 
     // v0.44
     static uint32_t lastTsScanAtMs = 0 ;
@@ -185,7 +226,6 @@ void AFSKState1(DemodState_t lastState, uint32_t mstime) {
       lastLdrAtMs = mstime ;
     }
 
-
     static uint32_t lastStatsDumpAtMs = 0 ;
     const uint32_t statsDumpInterval = 30000UL ; // 30 seconds
     if ((mstime > statsDumpInterval) && ((mstime - lastStatsDumpAtMs) > statsDumpInterval) ) {
@@ -194,56 +234,38 @@ void AFSKState1(DemodState_t lastState, uint32_t mstime) {
 
     lastState = dmREADY ;
   }
-
 }
 
 void AFSKState2(DemodState_t lastState) {
-
   if (modemTST.demodState == dmALT_MARK_SPACE) {
-
     if (lastState != dmALT_MARK_SPACE) {
-
       if (debugMode > 1) {
         Serial.print(F("\n > dmALT_MARK_SPACE"));
       }
-
       spamFlag = false;  // also cleared in readMcp3002Ch1()
-
     }
     lastState = dmALT_MARK_SPACE;
   }
-
 }
 
 void AFSKState3(DemodState_t lastState) {
-
   if (modemTST.demodState == dmALL_MARKS) {
-
     if (lastState != dmALL_MARKS) {
-
       if (debugMode > 1) {
         Serial.print(F("\n > dmALL_MARKS"));
       }
-
     }
-
     lastState = dmALL_MARKS;
   }
-
 }
 
 void AFSKState4(DemodState_t lastState) {
-
   if (modemTST.demodState == dmDATA) {
-    //
     // This section handles reading the demodulator bit queue.
-    //
     // Avoid blocking code in this section. No Serial Prints except warning/errors else it may
     // not run fast enough to get all the bits from the demodulator and cause a queue overflow.
-    //
 
     if (lastState != dmDATA)  {
-
       // clean call structure
       for (byte i = 0; i < sizeof(call.allBytes); i++) {
         call.allBytes[i] = 0;
@@ -265,11 +287,9 @@ void AFSKState4(DemodState_t lastState) {
         cli();
         modemTST.demodState = dmCLEANUP;
         sei();
-
         if (debugMode > 1) {
           Serial.println(F( "\n > dmCLEANUP" ));
         }
-
       }
       else if (rcPbq == 2) {
         cli();
@@ -277,16 +297,12 @@ void AFSKState4(DemodState_t lastState) {
         modemTST.demodState = dmERRORx;
         sei();
       }
-
     }
-
     lastState =  dmDATA ;
   }
-
 }
 
 void AFSKState5(DemodState_t lastState) {
-
   if (modemTST.demodState == dmCLEANUP) {
     // we're at the end of the data stream
     // demod can be suspended from here on without checking.
@@ -320,11 +336,9 @@ void AFSKState5(DemodState_t lastState) {
     Serial.print(" / ");
     Serial.print(callsThisRun);
   }
-
 }
 
 void AFSKState6(DemodState_t lastState) {
-
   if (modemTST.demodState == dmERRORx) {
     AFSK_suspend();
 
@@ -357,20 +371,20 @@ void AFSKState6(DemodState_t lastState) {
     lastState = dmERRORx;
     AFSK_resume();
   }
-
 }
 
 void phoneState2() {
   // begin call 1 recording and timer
-  // if DTMF is detected
-    // if DTMF is keypad
-      //check what numbers are being pressed
-    uint8_t tones = dtmf.detect();
-    char button = dtmf.tone2char(tones);
-    if(button > 0) {
-    	Serial.print(button); Serial.println(" pressed");
-    }
-    delay(1000);
+  startTimer();
+
+  // detecting dtmf
+  uint8_t tones = dtmf.detect();
+  char button = dtmf.tone2char(tones);
+  if(button > 0) {
+  	Serial.print(button);
+    Serial.println(" pressed");
+  }
+  delay(1000);
     // if DTMF is user or caller hanging up
       phoneState = ONHOOK_CALLEND;
     // if Howler tone is detected
@@ -479,15 +493,20 @@ void setup() {
 
   delay(10000);
 
+  // initial states
   phoneState = ONHOOK_NOCALL;
   AFSKState = AFSK_READY;
+  // get ready to suppress first ring
+  digitalWrite(FIRSTRING_PIN, HIGH);
+  // begin searching for DTMF tones
+  dtmf.begin(ADC1_PIN, 0);
 
   // setup timer and ADC. From here on, SPI slaves (TS, TFT & ADC ) must be interlocked.
   AFSK_init(&modemTST);
 
   adc1_config_width(ADC_WIDTH_BIT_12); // set 12 bit (0-4096)
   adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_0); // do not use attenuation
-  dtmf.begin((uint8_t)ADC1_PIN); // Use ADC 1, Channel 4 (GPIO36 on Wroom32)
+  dtmf.begin((uint8_t)ADC1_PIN); // Use ADC 1, Channel 4 (GPIO32 on Wroom32)
 
   Serial.println(F("Exiting setup()")) ;
 
