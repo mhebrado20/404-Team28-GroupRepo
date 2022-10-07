@@ -2,10 +2,15 @@
 #include "AFSK.h"
 #include <SPI.h>
 
+#define ADC1_PIN 32
+
 Afsk *AFSK_modem;
 
 volatile uint32_t demodLastActiveAtMs = 0 ;
-volatile uint16_t adcValueCh1 = 0 ;
+//volatile uint16_t adcValueCh1 = 0 ;
+
+int ADC_VALUE = 0;
+int voltage_value = 0;
 
 volatile bool inShortRingBurst = false ;
 volatile bool inLongRingBurst = false ;
@@ -13,49 +18,35 @@ volatile bool inLongRingBurst = false ;
 bool demodRun = true ; // v0.65 used to suspend demodulator code. Timer still runs.
 volatile bool demodActive = false ;  // interlock to ensure demod run complete
 
-void onTimer();
-void startTimer();
-void endTimer();
 void getADCSample();
 
-// a pointer variable timer of the type hw_timer_t in order to configure the timer
+void onAFSKTimer();
 hw_timer_t *afskTimer = NULL;
 portMUX_TYPE afskTimerMux = portMUX_INITIALIZER_UNLOCKED;
+static unsigned int AFSKTimeCounter = 1;
 
-void IRAM_ATTR onTimer(){ 
+void IRAM_ATTR onAFSKTimer(){ 
   portENTER_CRITICAL_ISR(&afskTimerMux);
-  static unsigned int timeCounter = 1;
 
-  Serial.print("onTimer ");
-  Serial.print(timeCounter);
+  Serial.print("onCallerTimer1 ");
+  Serial.print(AFSKTimeCounter);
   Serial.print(" at ");
   Serial.print(millis());
   Serial.println(" ms");
 
-  // need to change if statement
-  if (timeCounter == 10) {
-    endTimer();
-  }
-
-  timeCounter++;
+  AFSKTimeCounter++;
   portEXIT_CRITICAL_ISR(&afskTimerMux);
 }
 
 void startTimer() {
-  Serial.println("Start timer");
+  Serial.println("Start AFSK timer.");
   // timer 0, CP = 1 ns, count up
   afskTimer = timerBegin(0, 80, true);
   // edge triggered
-  timerAttachInterrupt(afskTimer, &onTimer, true);
+  timerAttachInterrupt(afskTimer, &onAFSKTimer, true);
   // 1 s
   timerAlarmWrite(afskTimer, 1000000, true);
   timerAlarmEnable(afskTimer);
-}
-
-void endTimer() {
-  timerEnd(afskTimer);
-  afskTimer = NULL;
-  Serial.println("Timer stopped.");
 }
 
 void ICACHE_RAM_ATTR getAdcSample()
@@ -75,7 +66,8 @@ void ICACHE_RAM_ATTR getAdcSample()
 
   demodActive = true;  // interlock
 
-  const byte MCP3002Ch0 = 0b01101000;  // start bit + openended conversion + chan 0 + MSBF (see data sheet)
+  // don't need since we have internal ADC
+  /* const byte MCP3002Ch0 = 0b01101000;  // start bit + openended conversion + chan 0 + MSBF (see data sheet)
   const byte MCP3002Ch1 = 0b01111000;  // start bit + openended conversion + chan 1 + MSBF (see data sheet)
   byte dataMsb0;
   byte dataLsb0;
@@ -94,6 +86,7 @@ void ICACHE_RAM_ATTR getAdcSample()
     runCount++;
   }
 
+  
   SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
 
   digitalWrite(ADC_CS_PIN, LOW);
@@ -109,9 +102,27 @@ void ICACHE_RAM_ATTR getAdcSample()
   SPI.endTransaction();
 
   sample8BitMidZero = (int16_t)((dataMsb0 << 6) | (dataLsb0 >> 2)) - 128;  // build 8 significant bit number in range -128 to 127
-  adcValueCh1 = (int16_t)( dataMsb1 << 8 ) | dataLsb1;   // 0..1023  ring detector
+  adcValueCh1 = (int16_t)( dataMsb1 << 8 ) | dataLsb1;   // 0..1023  ring detector */
 
-  AFSK_adc_isr(AFSK_modem, sample8BitMidZero);
+  // sampling from adc on esp32
+  ADC_VALUE = analogRead(ADC1_PIN);
+  Serial.print("ADC VALUE = ");
+  Serial.println(ADC_VALUE);
+  delay(1000);
+  voltage_value = (ADC_VALUE * 3.3 ) / (4095);
+  Serial.print("Voltage = ");
+  Serial.print(voltage_value);
+  Serial.print("volts");
+  delay(1000);
+
+  int sample;
+  int running_sum = 0;
+  uint8_t sample8Bit = 0;
+  byte dataMsb0;
+  byte dataLsb0;
+  sample8Bit = (int16_t)((dataMsb0 << 6) | (dataLsb0 >> 2)) - 128;  // build 8 significant bit number in range -128 to 127
+
+  AFSK_adc_isr(AFSK_modem, sample8Bit);
 
   // v0.71 call ringDetector() every 10 times ( ~1ms @9600Hz)
   static byte ringDetectorItCount = 0;
@@ -159,6 +170,7 @@ void ICACHE_FLASH_ATTR AFSK_init(Afsk *afsk) {
   
   startTimer();
 }
+
 
 // ==============
 // AFSK_resume()
@@ -303,36 +315,31 @@ void ICACHE_RAM_ATTR AFSK_adc_isr(Afsk *afsk, int8_t currentSample) {
 
 
     if ((afsk->curr_bit == afsk->last_bit)  && (afsk->curr_bit == MARKA)) {
-
       if (afsk->counter1111 < 255) {
         afsk->counter1111++;
       }
-
     }
     else {
       afsk->counter1111 = 0 ;
     }
 
     if ((afsk->curr_bit == afsk->last_bit)  && (afsk->curr_bit == SPACEA)) {
-
       if (afsk->counter0000 < 0xFFFF) {
         afsk->counter0000++;
       }
-
     }
     else {
       afsk->counter0000 = 0 ;
     }
 
     if (afsk->curr_bit != afsk->last_bit) {
-
       if (afsk->counter0101 < 255) {
         afsk->counter0101++;
       }
-      
     }
-    else afsk->counter0101 = 0 ;
-
+    else {
+      afsk->counter0101 = 0;
+    }
 
     if (afsk->demodState == dmINIT) {
       afsk->counter1111 = 0;
@@ -386,6 +393,7 @@ void ICACHE_RAM_ATTR AFSK_adc_isr(Afsk *afsk, int8_t currentSample) {
         afsk->demodError = 5 ;
         afsk->demodState = dmERRORx ;    // demod queue full
       }
+      
       if ( afsk->counter0000 >= 200 ) {   // if we've shot wildly over the end  // te_55 was 4000
         afsk->demodError = 6 ;
         afsk->demodState = dmERRORx ;    // state after DATA normally set in header parser (should set error code ? )
@@ -405,7 +413,7 @@ void ICACHE_RAM_ATTR AFSK_adc_isr(Afsk *afsk, int8_t currentSample) {
 // ringDetector()
 // ==============
 
-void ICACHE_RAM_ATTR ringDetector() {
+/* void ICACHE_RAM_ATTR ringDetector() {
   //
   // Called once every 10 iterations of 9600Hz  ( approx 1 time per mS )
   // average analogRead value over over 4 samples used to identify ring pulse (25Hz one wave - 40mS)
@@ -436,22 +444,22 @@ void ICACHE_RAM_ATTR ringDetector() {
   av =  ( ( numberOfSamples - 1 ) * av ) / numberOfSamples     +  adcValueCh1 / numberOfSamples ;   // average calculation
 
   if ( localDebug && false ) {
-    /*
+    
       swSerial.print( F("ar= " )) ;
       swSerial.print( ar ) ;
       swSerial.print( F("; av= " )) ;
       swSerial.println( av ) ;
-    */
+   
   }
 
   ( av > 200 ) ? inPulse = true : inPulse = false ;
 
   if ( inPulseLast == false && inPulse == true ) {
     if ( localDebug ) {
-      /*
+      
         swSerial.print( F("Space= " )) ;
         swSerial.println( ms - pulseEnd ) ;
-      */
+     
     }
     pulseStart = ms ;
     pulseCountInPeriod ++ ;
@@ -459,10 +467,10 @@ void ICACHE_RAM_ATTR ringDetector() {
 
   if ( inPulse == false && inPulseLast == true ) {
     if ( localDebug ) {
-      /*
+      
         swSerial.print( F("Mark = " )) ;
         swSerial.println( ms - pulseStart ) ;
-      */
+     
     }
     pulseEnd = ms ;
   }
@@ -475,12 +483,12 @@ void ICACHE_RAM_ATTR ringDetector() {
     if ( pulseCountInPeriod >= 4 && pulseCountInPeriod < 40 ) {   // upper bound not tested - attempt to exclude outgoing dtmf
       shortRingConfirmedAtMs = ms ;
       if ( localDebug ) {
-        /*
+        
           swSerial.print( F("pulses in pulseCountCollectionPeriod =" )) ;
           swSerial.print( pulseCountInPeriod ) ;
           swSerial.print( F(" ; collectionPeriod ms= " )) ;
           swSerial.println( ms - collectionPeriodStartLastAtMs ) ;
-        */
+       
       }
     }
     collectionPeriodStartLastAtMs = ms ;
@@ -493,4 +501,4 @@ void ICACHE_RAM_ATTR ringDetector() {
   inShortRingBurst = ( ms > 5000 &&  ms - shortRingConfirmedAtMs < 1700 ) ;  // prevent trigger on system start.
   inLongRingBurst = ( ms > 5000 &&  ms - shortRingConfirmedAtMs < 5000 ) ;  // prevent trigger on system start.
 
-}
+} */
