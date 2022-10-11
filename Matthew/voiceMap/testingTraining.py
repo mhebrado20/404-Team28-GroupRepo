@@ -12,7 +12,7 @@ import plotly
 
 # adding the directory on where to find the files
 # only doing 2 of the test to start
-dirs = ["speakers/test/Benjamin_Netanyau", "speakers/test/Nelson_Mandela"]  # successful run!
+dirs = ["dataset/Benjamin_Netanyau", "dataset/Nelson_Mandela"]  # successful run!
 # dirs = ["speakers/test/Jens_Stoltenberg", "speakers/test/Magaret_Tarcher"]  # successful run!
 # testing with 3 speakers
 # I can't figure out how to make it work with 3
@@ -78,7 +78,7 @@ mylayout = go.Layout(xaxis=dict(title="spectral_centroid_mean"),
                      yaxis=dict(title="spectral_entropy_mean"))  # was energy_entropy_mean
 
 # generate plot
-plotly.offline.iplot(go.Figure(data=[p1, p2, cs], layout=mylayout))
+plotly.offline.plot(go.Figure(data=[p1, p2, cs], layout=mylayout))
 
 ### NOTES Can only test 2 at a time.
 

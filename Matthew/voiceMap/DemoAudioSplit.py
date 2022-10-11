@@ -11,7 +11,7 @@ each with the file name 0.wav . . . 179.wav
 from pydub import AudioSegment
 import math
 import glob
-import os
+import numpy as np
 from pathlib import Path
 
 def numFiles(folderLocation):
@@ -55,7 +55,7 @@ class AudioSplitter:
     def multipleSplit(self, sec_per_split):
         total_sec = math.ceil(self.getDuration())  # gets the total duration of the audio segment as a whole integer
         # loop starts at 0 until the full duration (s) in intervals of sec_per_split
-        for i in range(0, total_sec, sec_per_split):
+        for i in np.arange(0, total_sec, sec_per_split):
             split_fn = str(i) + ".wav"  # define naming sense for the file -- 0.wav . . . 999.wav etc
             self.singleSplit(i, i + sec_per_split, split_fn)  # call single split to create a single interval
             print(str(i) + ' Done')

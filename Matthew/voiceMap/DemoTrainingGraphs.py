@@ -13,13 +13,13 @@ import plotly
 
 # dirs: directory where the files to train the SVM are located
 # Amy & Scott
-# dirs = ["speakers/Amy", "speakers/Scott"]
+# dirs = ["speakers/Amy/splits1", "speakers/Scott/splits1"]
 
 # Amy & Matthew
-# dirs = ["speakers/Amy//", "speakers/Matthew"]
+dirs = ["speakers/Amy/splits1", "speakers/Matthew/splits1"]
 
 # Scott & Matthew
-dirs = ["speakers/Matthew/splits", "speakers/Scott/splits"]
+# dirs = ["speakers/Matthew/splits", "speakers/Scott/splits"]
 
 class_names = [os.path.basename(d) for d in dirs]  # set class names to be the folder titles
 
@@ -85,4 +85,4 @@ mylayout = go.Layout(xaxis=dict(title="spectral_centroid_mean"),
                      yaxis=dict(title="spectral_entropy_mean"))  # was energy_entropy_mean
 
 # generate plot
-plotly.offline.iplot(go.Figure(data=[p1, p2, cs], layout=mylayout))
+plotly.offline.plot(go.Figure(data=[p1, p2, cs], layout=mylayout))
