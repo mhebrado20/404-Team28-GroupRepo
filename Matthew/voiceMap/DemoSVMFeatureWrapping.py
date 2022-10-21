@@ -17,7 +17,7 @@ testDirs = ["speakers/Amy/splits1/", "speakers/Matthew/splits1/", "speakers/Scot
 # print("Test dirs: ", testDirs)
 
 
-extract_features_and_train(testDirs, m_step, m_step, s_step, s_step, "svm_rbf", "svm_all")
+extract_features_and_train(testDirs, m_step, m_step, s_step, s_step, "gradientboosting", "svm_all")  # orig svm_rbf
 """ 
 extract_features_and_train is a function from pyAudioAnalysis that handles feature extraction
 and classifier straining. In my use case classifying Support Vector Machines (SVM) using 

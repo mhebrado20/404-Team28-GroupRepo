@@ -83,7 +83,7 @@ def genFiles(d):
         # print("\nf: ", res_str)
         split_wav = AudioSplitter(d, res_str, n)  # call the AudioSplitter class with d (directory) and
         # f (exact filepath)
-        split_wav.multipleSplit(sec_per_split=1)  # call multipleSplit to split the audio segment on 1 second intervals
+        split_wav.multipleSplit(sec_per_split=0.5)  # call multipleSplit to split the audio segment on 1 second intervals
         n += 1
 
 

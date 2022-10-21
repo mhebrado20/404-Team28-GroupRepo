@@ -9,7 +9,7 @@ for root, dirs, files in os.walk(src_dir):
         # print("name: ", name)
         src_file.append(src_dir + name)
 
-# convert wav to mp3
+# convert * to wav
 for f in src_file:
     full_file = f
     print("full_file: ", full_file)

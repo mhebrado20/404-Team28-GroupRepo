@@ -52,7 +52,7 @@ def truncatePrecentage(num, n):
 # for every file in the test directory
 for f in testDirectory:
     print(f"{f}:")
-    c, p, p_nam = aTT.file_classification(f, "svm_all", "svm_rbf")
+    c, p, p_nam = aTT.file_classification(f, "svm_all", "gradientboosting")  # orig svm_rbf
 
     # Amy
     print(f"P({p_nam[0]} = {truncatePrecentage(p[0], 4)})")
