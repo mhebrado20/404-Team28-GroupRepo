@@ -19,6 +19,10 @@ class Call(mongoengine.Document):
     call_recording = mongoengine.FileField(collection_name='recordings')
     # this is the name of the file as given by the naming convention specified by user input
     file_name = mongoengine.StringField(default='')
+    # count for document
+    document_number = mongoengine.IntField()
+    # svm document, this is a mapping of the voice signature
+    svm = mongoengine.FileField(collection_name='svm_files')
 
     # incoming_caller_info = mongoengine.EmbeddedDocumentField(IncomingCaller)    to be implemented in 404 when
     # information between database and ML algorithm are sent between each other
