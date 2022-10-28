@@ -5,7 +5,7 @@ Does feature extraction and generates an SVM classification file
 from pyAudioAnalysis.audioTrainTest import extract_features_and_train
 import os
 
-m_step, s_step = 0.05, 0.05  # set midterm-step and short-term step orig
+m_step, s_step = 0.1, 0.05  # set midterm-step and short-term step orig 0.05 0.05
 # testDirs: directory where the files to train the SVM are located
 testDirs = ["speakers/Amy/splits1/", "speakers/Matthew/splits1/", "speakers/Scott/splits1/"]
 
@@ -17,7 +17,7 @@ testDirs = ["speakers/Amy/splits1/", "speakers/Matthew/splits1/", "speakers/Scot
 # print("Test dirs: ", testDirs)
 
 
-extract_features_and_train(testDirs, m_step, m_step, s_step, s_step, "gradientboosting", "svm_all")  # orig svm_rbf
+extract_features_and_train(testDirs, m_step, m_step, s_step, s_step, "gradientboosting", "grad_all")  # orig svm_rbf
 """ 
 extract_features_and_train is a function from pyAudioAnalysis that handles feature extraction
 and classifier straining. In my use case classifying Support Vector Machines (SVM) using 
