@@ -7,6 +7,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "base64.hpp"
+#include <ardubson.h>
 
 
 ADCSampler *adcSampler = NULL;
@@ -58,6 +60,17 @@ struct CustomWriter {
 };
 */
 
+void printHex(unsigned char* data, int len) {
+  for (int i = 0; i < len; i++, data++) {
+    Serial.print("0x");
+    if ((unsigned char)*data <= 0xF) Serial.print("0");
+    Serial.print((unsigned char)*data, HEX);
+    Serial.print(" ");
+    if ((i + 1) % 0x8 == 0) Serial.println();
+  }
+  Serial.println();
+}
+
 // i2s config for using the internal ADC
 i2s_config_t adcI2SConfig = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
@@ -84,7 +97,7 @@ i2s_pin_config_t i2sPins = {
 
 
 // how many samples to read at once
-const int SAMPLE_SIZE = 16348; //16348
+const int SAMPLE_SIZE = 16384; //16384
 
 
 // send data to a serial port
@@ -128,12 +141,15 @@ void sendData(uint8_t *bytes, size_t count)
   // printf("to_hex completed\n");
   // recording = recording.as<JsonVariant>();
   // printf("Print buf\n");
-  uint8_t uint8[] = {0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x00};
+  // uint8_t uint8[] = {0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x00};
   // uint8[sizeof(uint8)-1] = (uint8_t)0x00;
   // uint8_t termChar = 0x00;
-  DynamicJsonDocument recording(5120);
   // recording = recording.as<JsonVariant>();
-  recording["audioData"] = bytes;
+  // unsigned char bytes_b64[sizeof(uint16_t) * SAMPLE_SIZE * 2];
+  // unsigned char *bytes_b64 = (unsigned char*)malloc(sizeof(uint16_t) * SAMPLE_SIZE * 2);
+  // printf("NO watchdog yet");
+  // unsigned int b64_length = encode_base64(bytes, sizeof(uint16_t) * SAMPLE_SIZE, bytes_b64);
+  // recording["audioData"] = bytes_b64;
   // std::cout << sizeof(bytes) << std::endl;
   // std::cout << "size of array: " << (bytes) << std::endl;
   // std::cout << "size of count: " << count << std::endl;
@@ -147,10 +163,29 @@ void sendData(uint8_t *bytes, size_t count)
   */
   // serializeJson(recording, Serial);
   // Serial.print("\n");
+  // Serial.println(bytes_b64, HEX);
   // serializeJson(terminatingChar, Serial);
   // Serial.print((String)uint8);
   // std::cout << "bytes: " << (uint8_t *)bytes << std::endl;
   // uint8_t uint8[] = {0x01, 0x02, 0x03, 0x04};
+
+  // std::cout << sizeof(bytes) << std::endl;
+  // std::cout << "size of array: " << (bytes) << std::endl;
+  // std::cout << "size of count: " << count << std::endl;
+  // recording.add((uint8_t)0x00);
+  /*
+  if(recording.JsonDocument::overflowed()) {
+    printf("document overflowed\n");
+  } else {
+    printf("NOT overflowed\n");
+  }
+  */
+  // serializeJson(bsonArray, Serial);
+  // Serial.print("\n");
+  // BSONElement bson_bytes;
+  // bson_bytes.Key("audio").Value(bytes);
+  // Serial.println(bson_bytes.Value());
+  printHex(bytes, count);
 }
 
 
@@ -173,9 +208,9 @@ void sendData(uint8_t *bytes, size_t count)
 void adcWriterTask(void *param)
 {
   I2SSampler *sampler = (I2SSampler *)param; // changed I2SSampler to ADCSampler
-  int16_t *samples = (int16_t *)malloc(sizeof(uint16_t) * SAMPLE_SIZE + 1); //+1 to account for the terminating bit that will be added to the end
+  int16_t *samples = (int16_t *)malloc(sizeof(uint16_t) * SAMPLE_SIZE); //+1 to account for the terminating bit that will be added to the end
   // std::cout << "what size should be: " << (sizeof(uint16_t) * SAMPLE_SIZE) << std::endl;
-  // std::cout << "what size is: " << (sizeof(*samples)) << std::endl;
+  // std::cout << "what size is: " << (sizeof(samples)) << std::endl;
   if (!samples)
   {
     Serial.println("Failed to allocate memory for samples");
@@ -187,8 +222,11 @@ void adcWriterTask(void *param)
     int samples_read = sampler->read(samples, SAMPLE_SIZE);
     // std::cout << (sizeof(samples)) << std::endl;
     // printf("Start send data\n");
-    // sendData((uint8_t *)samples, samples_read * sizeof(uint16_t));
-    std::cout << "bytes: " << (uint8_t *)samples << std::endl;
+    // printf("NO watchdog yet");
+    sendData((uint8_t *)samples, samples_read * sizeof(uint16_t));
+    // std::cout << "bytes: " << (uint8_t *)samples << std::endl;
+    // char *bytes_string = sprintf(bytes);
+    // Serial.println(samples, HEX);
   }
 }
 

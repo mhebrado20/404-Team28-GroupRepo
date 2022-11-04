@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "ADCSampler.h"
 #include <iostream>
 
@@ -46,12 +47,13 @@ int ADCSampler::read(int16_t *samples, int count)
         // std::cout << "element: " << (256 - (uint8_t(samples[i]) & 0xfff)) << std::endl;
         // vTaskDelay(100);
         // (uint16_t(samples[i]) & 0xfff)
-        samples[i] = (2048 - (uint8_t(samples[i]) & 0xfff) * 15);
+        samples[i] = (2048 - (uint16_t(samples[i]) & 0xfff)) * 15;
+        // Serial.println(samples[i], HEX);
         // samples[i] = (2048 - (uint16_t(samples[i]) & 0xfff) * 15);
-        std::cout << "element " << i << ": " << samples[i] << std::endl;
-        vTaskDelay(10);
+        // std::cout << "element " << i << ": " << samples[i] << std::endl;
+        // vTaskDelay(10);
     }
-    samples[samples_read] = (uint16_t)0x0000; //could be here
+    // samples[samples_read * 2] = (uint16_t)0x0000; //could be here
     // std::cout << "final sample:" << samples[samples_read] << std::endl;
     // std::cout << "correct value:" << (uint8_t)0x00 << std::endl;
     // samples[sizeof(samples)-1] = 0x00;
