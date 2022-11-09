@@ -4,11 +4,15 @@
 #include "Config.h"
 #include "AFSK.h"
 #include "XMDF.h"
-#include <SPI.h>
+//#include <SPI.h>
 #include <ArduinoJson.h>
 #include <PhoneDTMF.h>
 #include <driver/adc.h>
 #include "Adafruit_FONA.h"
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Wire.h>
+#include <Adafruit_NeoPixel.h>
 
 // define pins
 #define ONOFFHOOK_PIN 14
@@ -18,7 +22,8 @@
 #define ADC1_PIN 32
 #define RING_PIN 35
 #define FIRSTRING_PIN 26
-#define WSLED_PIN 23
+#define WSLED_PIN 15
+#define LEDNUM 3
 // analog input pin might be implemented later
 // #define ANALOGINPUT_PIN 34
 
@@ -34,6 +39,9 @@
 #define AFSK_CLEANUP 9
 #define AFSK_ERRORx 10
 
+#define SCREEN_WIDTH 128 // OLED width,  in pixels
+#define SCREEN_HEIGHT 32 // OLED height, in pixels
+
 
 // global variables
 byte debugMode = 2 ;  // updated in setup()   
@@ -45,13 +53,14 @@ static unsigned int ring;
 static unsigned int onoff_hook;
 //bool spamFlag = false ;                     // used in getCallFromDb() && handleRingDetector() && loop()
 //const byte relayPin = 15;
-bool numberMatches;
+bool numberMatchesBL;
 bool callOngoing;
 
 static unsigned int TimeOfCall;
 
 
 // state prototype functions
+void cidSM();
 void onHookNoCall();
 void offHookCallConn();
 void offHookOutgoing();
@@ -71,6 +80,8 @@ char versionNum[] = "SCID ESP32 Decoding v1.0";
 
 Afsk modemTST;
 PhoneDTMF dtmf;
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+Adafruit_NeoPixel leds = Adafruit_NeoPixel(LEDNUM, WSLED_PIN, NEO_GRB + NEO_KHZ800);
 
 /************* Timers *************/
 hw_timer_t *callTimer1 = NULL;
@@ -154,6 +165,79 @@ void IRAM_ATTR onRingTimer() {
   portEXIT_CRITICAL_ISR(&ringTimerMux);
 }
 
+/************* CID State Machine *************/
+/* 1. channel seizure tones to mark
+   2. AFSK demodulataor
+   3. decode cid packet
+   4. send info to NCID
+*/
+void cidSM() {
+  static DemodState_t state_last;
+  static bool setupRun = false;
+
+  if (!setupRun) {
+    // workaround for crash in prolonged setup()
+    setup();
+    setupRun = true;
+  }
+
+  // in debugMode 1 the demod output is raw/unparsed so we exit before the parser stage
+  static int charsPrinted = 0;
+  if (debugMode == 1) {
+    static bool runOnce = false;
+
+    if (!runOnce) {
+      runOnce = true;
+      AFSK_resume();
+    }
+
+    if (modemTST.curr_bitReady == true) {
+      cli();
+      modemTST.curr_bitReady = false;
+      sei();
+      Serial.print(modemTST.curr_bit);
+      charsPrinted++;
+
+      if (charsPrinted == 80) {
+        charsPrinted = 0;
+        Serial.println();
+      }
+    }
+
+    return;
+  }
+
+  uint32_t ms = millis();
+
+  //static uint32_t lastUtlityRun = 0;
+  //if (!modemTST.adcSpiExclusive && ((ms - lastUtlityRun) >= 100)) {
+  //  lastUtlityRun = ms;
+  //}
+
+  // begin CID state machine
+  switch (AFSKState) {
+    case AFSK_READY:
+      AFSKReady(state_last, ms);
+      break;
+    case AFSK_ALTMARKSPACE:
+      AFSKAltMark(state_last);
+      break;
+    case AFSK_ALLMARKS:
+      AFSKAllMarks(state_last);
+      break;
+    case AFSK_DATA:
+      AFSKData(state_last);
+    case AFSK_CLEANUP:
+      AFSKCleanUp(state_last);
+      break;
+    case AFSK_ERRORx:
+      AFSKErrorx(state_last);
+      break;
+    default:
+      AFSKState = AFSK_READY;
+  }
+}
+
 /************* ONHOOK_NOCALL *************/
 /*  State: phone is on hook and is waiting for a call
     1. detects when the ring pin is triggered (phone is ringing)
@@ -166,7 +250,17 @@ void IRAM_ATTR onRingTimer() {
 */
 void onHookNoCall() {
   if (phoneState == ONHOOK_NOCALL) {
-    Serial.println("In phone state: ONHOOK_NOCALL");
+    //Serial.println("In phone state: ONHOOK_NOCALL");
+    //delay(1000);
+    // Clear the buffer.
+    display.clearDisplay();
+    display.display();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 5);
+    // Display static text
+    display.println("PHONE STATE: On Hook, waiting for call..");
+    display.display();
     delay(1000);
 
     // get ready to suppress first ring
@@ -175,84 +269,16 @@ void onHookNoCall() {
     // testing purposes, manually set ring pin to high
     //digitalWrite(RING_PIN, HIGH);
     if (digitalRead(RING_PIN) == HIGH) {
-      // Initial ring supression
-      // initial ring is suppressed, now let the phone continue ringging after a delay
-      delay(1000);
-      digitalWrite(FIRSTRING_PIN, LOW);
+      // Initial ring supression get CID
+      cidSM();
 
-      // CID state machine
-      // 1. channel seizure tones to mark
-      // 2. AFSK demodulataor
-      // 3. decode cid packet
-      // 4. send info to NCID
-      static DemodState_t state_last;
-      static bool setupRun = false;
-
-      if (!setupRun) {
-      // workaround for crash in prolonged setup()
-        setup();
-        setupRun = true;
-      }
-
-      // in debugMode 1 the demod output is raw/unparsed so we exit before the parser stage
-      static int charsPrinted = 0;
-      if (debugMode == 1) {
-        static bool runOnce = false;
-
-        if (!runOnce) {
-          runOnce = true;
-          AFSK_resume();
-        }
-
-        if (modemTST.curr_bitReady == true) {
-          cli();
-          modemTST.curr_bitReady = false;
-          sei();
-          Serial.print(modemTST.curr_bit);
-          charsPrinted++;
-
-          if (charsPrinted == 80) {
-            charsPrinted = 0;
-            Serial.println();
-          }
-        }
-
-        return;
-      }
-
-      uint32_t ms = millis();
-
-      //static uint32_t lastUtlityRun = 0;
-      //if (!modemTST.adcSpiExclusive && ((ms - lastUtlityRun) >= 100)) {
-      //  lastUtlityRun = ms;
-      //}
-
-      // begin CID state machine
-      switch (AFSKState) {
-        case AFSK_READY:
-          AFSKReady(state_last, ms);
-          break;
-        case AFSK_ALTMARKSPACE:
-          AFSKAltMark(state_last);
-          break;
-        case AFSK_ALLMARKS:
-          AFSKAllMarks(state_last);
-          break;
-        case AFSK_DATA:
-          AFSKData(state_last);
-        case AFSK_CLEANUP:
-          AFSKCleanUp(state_last);
-          break;
-        case AFSK_ERRORx:
-          AFSKErrorx(state_last);
-          break;
-        default:
-          AFSKState = AFSK_READY;
-      }
-
-      if (numberMatches == true) { // cid matches blacklist
+      // see if the call number matches blacklist
+      if (numberMatchesBL == true) { // cid matches blacklist
         //HUP or fax tone
       } else {
+        // initial ring is suppressed, let the phone continue ringging after a delay
+        delay(1000);
+        digitalWrite(FIRSTRING_PIN, LOW);
         // begin ringing timer
         Serial.println("Begin RingTimer");
         // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
@@ -274,7 +300,7 @@ void onHookNoCall() {
           phoneState = OFFHOOK_CALLCONN;
           // report to NCID
         }
-      }
+      }      
     // outgoing call
     } else if ((digitalRead(ONOFFHOOK_PIN) == HIGH) || (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) { // OR if .json file is received from gateway to have NCID make call
       phoneState = OFFHOOK_OUTGOING;
@@ -297,7 +323,16 @@ void onHookNoCall() {
 */
 void offHookCallConn() {
   if (phoneState == OFFHOOK_CALLCONN) {
-    Serial.println("In phone state: OFFHOOK_CALLCONN");
+    //Serial.println("In phone state: OFFHOOK_CALLCONN");
+    //delay(1000);
+    display.clearDisplay();
+    display.display();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 5);
+    // Display static text
+    display.println("PHONE STATE: Off Hook, call connected..");
+    display.display();
     delay(1000);
 
     Serial.println("Call 1 connected.");
@@ -367,7 +402,16 @@ void offHookCallConn() {
 */
 void offHookOutgoing() {
   if (phoneState == OFFHOOK_OUTGOING) {
-    Serial.println("In phone state: OFFHOOK_OUTGOING");
+    //Serial.println("In phone state: OFFHOOK_OUTGOING");
+    //delay(1000);
+    display.clearDisplay();
+    display.display();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 5);
+    // Display static text
+    display.println("PHONE STATE: Off Hook, making an outgoing call..");
+    display.display();
     delay(1000);
 
     /* if () { // solid or stutter tone is detected
@@ -402,7 +446,16 @@ void offHookOutgoing() {
 */
 void onHookCallEnd() {
   if (phoneState == ONHOOK_CALLEND) {
-    Serial.println("In phone state: ONHOOK_CALLEND");
+    //Serial.println("In phone state: ONHOOK_CALLEND");
+    //delay(1000);
+    display.clearDisplay();
+    display.display();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 5);
+    // Display static text
+    display.println("PHONE STATE: On Hook, call ended..");
+    display.display();
     delay(1000);
 
     Serial.println("Begin OnHookTimer");
@@ -626,16 +679,16 @@ void setup() {
   Serial.begin(115200);
   Serial.println(versionNum);
 
-  SPI.begin();
+  //SPI.begin();
 
-  configSetup();
+  //configSetup();
   // count system restarts
-  config.runNumber += 1;   
+  //config.runNumber += 1;   
   
   // resave to eeprom
-  eepromDump(); 
-  eepromFetch();
-  PrintEepromVariables();
+  //eepromDump(); 
+  //eepromFetch();
+  //PrintEepromVariables();
 
   // set input pins
   pinMode(ONOFFHOOK_PIN, INPUT);
@@ -647,27 +700,68 @@ void setup() {
   pinMode(FIRSTRING_PIN, OUTPUT);
   pinMode(DAC1_PIN, OUTPUT);
   pinMode(WSLED_PIN, OUTPUT);
+  digitalWrite(WSLED_PIN, HIGH);
 
   //pinMode(CAL_PIN, OUTPUT);
 
-  delay(10000);
+  delay(1000);
+  
+  // set up displays and wsleds
+  // initialize OLED display with I2C address 0x3C
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("failed to start SSD1306 OLED"));
+    while (1);
+  }
 
-  // initial states
-  phoneState = ONHOOK_NOCALL;
-  AFSKState = AFSK_READY;
-  // begin searching for DTMF tones
-  dtmf.begin(ADC1_PIN, 0);
+  leds.begin();
+  leds.setBrightness(50);
+  leds.show();
+  leds.clear();
+  for(int i=0; i<LEDNUM; i++) { // For each pixel...
+    // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+    leds.setPixelColor(i, leds.Color(0, 0, 150));
+    leds.show();   // Send the updated pixel colors to the hardware.
+    //delay(500); // Pause before next pass through loop
+  }
+
+  /* // Clear the buffer.
+  delay(2000);
+  display.clearDisplay();
+
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 10);
+  // Display static text
+  display.println("Hello, world!");
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+  display.display(); */
 
   // setup timer and ADC. From here on, SPI slaves (TS, TFT & ADC) must be interlocked.
   AFSK_init(&modemTST);
+  // initial states
+  phoneState = ONHOOK_NOCALL;
+  // Clear the buffer.
+  delay(2000);
+  display.clearDisplay();
+  display.display();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 5);
+  // Display static text
+  display.println("PHONE STATE: On Hook, waiting for call..");
+  display.display();
 
+  AFSKState = AFSK_READY;
+  // begin searching for DTMF tones
   adc1_config_width(ADC_WIDTH_BIT_12); // set 12 bit (0-4096)
   adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_0); // do not use attenuation
   dtmf.begin((uint8_t)ADC1_PIN); // Use ADC 1, Channel 4 (GPIO32 on Wroom32)
 
   Serial.println(F("Exiting setup()"));
 }
-    
+
 void loop() {
   //digitalWrite(CAL_PIN, LOW);
   // phone state machine
