@@ -36,12 +36,17 @@
 
 
 // global variables
+byte debugMode = 2 ;  // updated in setup()   
+unsigned long callsThisRun = 0 ;
+uint32_t successCountLoop = 0 ;
 static unsigned int phoneState;
 static unsigned int AFSKState;
 static unsigned int ring;
 static unsigned int onoff_hook;
-bool spamFlag = false ;                     // used in getCallFromDb() && handleRingDetector() && loop()
+//bool spamFlag = false ;                     // used in getCallFromDb() && handleRingDetector() && loop()
 //const byte relayPin = 15;
+bool numberMatches;
+bool callOngoing;
 
 static unsigned int TimeOfCall;
 
@@ -51,12 +56,15 @@ void onHookNoCall();
 void offHookCallConn();
 void offHookOutgoing();
 void onHookCallEnd();
+void cidStateMachine();
+void detectDTMF();
 void AFSKReady(DemodState_t lastAFSKState, uint32_t mstime);
 void AFSKAltMark(DemodState_t lastAFSKState);
 void AFSKAllMarks(DemodState_t lastAFSKState);
 void AFSKData(DemodState_t lastAFSKState);
 void AFSKCleanUp(DemodState_t lastAFSKState);
 void AFSKErrorx(DemodState_t lastAFSKState);
+void hookState(bool state);
 //void ICACHE_FLASH_ATTR handleRingDetector(bool force);
 
 char versionNum[] = "SCID ESP32 Decoding v1.0";
@@ -167,107 +175,106 @@ void onHookNoCall() {
     // testing purposes, manually set ring pin to high
     //digitalWrite(RING_PIN, HIGH);
     if (digitalRead(RING_PIN) == HIGH) {
-          /************* Initial ring supression *************/
-          // initial ring is suppressed, now let the phone continue ringging after a delay
-          delay(1000);
-          digitalWrite(FIRSTRING_PIN, LOW);
+      // Initial ring supression
+      // initial ring is suppressed, now let the phone continue ringging after a delay
+      delay(1000);
+      digitalWrite(FIRSTRING_PIN, LOW);
 
-          /************* CID state machine *************/
-          // 1. channel seizure tones to mark
-          // 2. AFSK demodulataor
-          // 3. decode cid packet
-          // 4. send info to NCID
-          static DemodState_t state_last;
-          static bool setupRun = false;
+      // CID state machine
+      // 1. channel seizure tones to mark
+      // 2. AFSK demodulataor
+      // 3. decode cid packet
+      // 4. send info to NCID
+      static DemodState_t state_last;
+      static bool setupRun = false;
 
-          if (!setupRun) {
-            // workaround for crash in prolonged setup()
-            setup();
-            setupRun = true;
+      if (!setupRun) {
+      // workaround for crash in prolonged setup()
+        setup();
+        setupRun = true;
+      }
+
+      // in debugMode 1 the demod output is raw/unparsed so we exit before the parser stage
+      static int charsPrinted = 0;
+      if (debugMode == 1) {
+        static bool runOnce = false;
+
+        if (!runOnce) {
+          runOnce = true;
+          AFSK_resume();
+        }
+
+        if (modemTST.curr_bitReady == true) {
+          cli();
+          modemTST.curr_bitReady = false;
+          sei();
+          Serial.print(modemTST.curr_bit);
+          charsPrinted++;
+
+          if (charsPrinted == 80) {
+            charsPrinted = 0;
+            Serial.println();
           }
+        }
 
-          // in debugMode 1 the demod output is raw/unparsed so we exit before the parser stage
-          static int charsPrinted = 0;
-          if (debugMode == 1)
-          {
-            static bool runOnce = false;
+        return;
+      }
 
-            if (!runOnce) {
-              runOnce = true;
-              AFSK_resume();
-            }
+      uint32_t ms = millis();
 
-            if (modemTST.curr_bitReady == true) {
-              cli();
-              modemTST.curr_bitReady = false;
-              sei();
-              Serial.print(modemTST.curr_bit);
-              charsPrinted++;
+      //static uint32_t lastUtlityRun = 0;
+      //if (!modemTST.adcSpiExclusive && ((ms - lastUtlityRun) >= 100)) {
+      //  lastUtlityRun = ms;
+      //}
 
-              if (charsPrinted == 80) {
-                charsPrinted = 0;
-                Serial.println();
-              }
-            }
+      // begin CID state machine
+      switch (AFSKState) {
+        case AFSK_READY:
+          AFSKReady(state_last, ms);
+          break;
+        case AFSK_ALTMARKSPACE:
+          AFSKAltMark(state_last);
+          break;
+        case AFSK_ALLMARKS:
+          AFSKAllMarks(state_last);
+          break;
+        case AFSK_DATA:
+          AFSKData(state_last);
+        case AFSK_CLEANUP:
+          AFSKCleanUp(state_last);
+          break;
+        case AFSK_ERRORx:
+          AFSKErrorx(state_last);
+          break;
+        default:
+          AFSKState = AFSK_READY;
+      }
 
-            return;
-          }
+      if (numberMatches == true) { // cid matches blacklist
+        //HUP or fax tone
+      } else {
+        // begin ringing timer
+        Serial.println("Begin RingTimer");
+        // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
+        // info).
+        ringTimer = timerBegin(0, 80, true);
+        // Attach onTimer function to our timer.
+        timerAttachInterrupt(ringTimer, &onRingTimer, true);
+        // Set alarm to call onTimer function every second (value in microseconds).
+        // Repeat the alarm (third parameter)
+        timerAlarmWrite(ringTimer, 1000000, true);
+        // Start an alarm
+        timerAlarmEnable(ringTimer);
 
-          uint32_t ms = millis();
-
-          static uint32_t lastUtlityRun = 0;
-          if (!modemTST.adcSpiExclusive && ((ms - lastUtlityRun) >= 100)) {
-            lastUtlityRun = ms;
-          }
-
-          // begin CID state machine
-          switch (AFSKState) {
-            case AFSK_READY:
-              AFSKReady(state_last, ms);
-              break;
-            case AFSK_ALTMARKSPACE:
-              AFSKAltMark(state_last);
-              break;
-            case AFSK_ALLMARKS:
-              AFSKAllMarks(state_last);
-              break;
-            case AFSK_DATA:
-              AFSKData(state_last);
-            case AFSK_CLEANUP:
-              AFSKCleanUp(state_last);
-              break;
-            case AFSK_ERRORx:
-              AFSKErrorx(state_last);
-              break;
-            default:
-              AFSKState = AFSK_READY;
-          }
-
-          if () { // cid matches blacklist
-            //HUP or fax tone
-          } else {
-            // begin ringing timer
-            Serial.println("Begin RingTimer");
-            // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
-            // info).
-            ringTimer = timerBegin(0, 80, true);
-            // Attach onTimer function to our timer.
-            timerAttachInterrupt(ringTimer, &onRingTimer, true);
-            // Set alarm to call onTimer function every second (value in microseconds).
-            // Repeat the alarm (third parameter)
-            timerAlarmWrite(ringTimer, 1000000, true);
-            // Start an alarm
-            timerAlarmEnable(ringTimer);
-
-            if ((ringTimeCounter > 36) && ((digitalRead(ONOFFHOOK_PIN) == LOW) || (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW))) {
-              timerEnd(ringTimer);
-              ringTimer = NULL;
-              phoneState = ONHOOK_CALLEND;
-            } else if ((digitalRead(ONOFFHOOK_PIN) == HIGH) || (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
-              phoneState = OFFHOOK_CALLCONN;
-              // report to NCID
-            }
-          }
+        if ((ringTimeCounter > 36) && ((digitalRead(ONOFFHOOK_PIN) == LOW) || (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW))) {
+          timerEnd(ringTimer);
+          ringTimer = NULL;
+          phoneState = ONHOOK_CALLEND;
+        } else if ((digitalRead(ONOFFHOOK_PIN) == HIGH) || (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
+          phoneState = OFFHOOK_CALLCONN;
+          // report to NCID
+        }
+      }
     // outgoing call
     } else if ((digitalRead(ONOFFHOOK_PIN) == HIGH) || (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) { // OR if .json file is received from gateway to have NCID make call
       phoneState = OFFHOOK_OUTGOING;
@@ -294,6 +301,7 @@ void offHookCallConn() {
     delay(1000);
 
     Serial.println("Call 1 connected.");
+    callOngoing = true;
 
     // begin call 1 recording and timer
     Serial.println("Begin CallTimer1");
@@ -308,7 +316,6 @@ void offHookCallConn() {
     // Start an alarm
     timerAlarmEnable(callTimer1);
 
-    // detecting dtmf
     uint8_t tones = dtmf.detect();
     char button = dtmf.tone2char(tones);
     if(button > 0) {
@@ -317,8 +324,9 @@ void offHookCallConn() {
     }
     delay(1000);
 
-    if () { // CPE Alerting Signal (CAS) detected
+    /* if () { // CPE Alerting Signal (CAS) detected
       // get cwid
+      cidStateMachine();
       // if call 2 is picked up, pause call 1 recording and timer, start call 2 recording and timer
       Serial.println("Begin CallTimer2");
       // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
@@ -331,19 +339,19 @@ void offHookCallConn() {
       timerAlarmWrite(callTimer2, 1000000, true);
       // Start an alarm
       timerAlarmEnable(callTimer2);
-    }
-  
+    } */
+
     // if user hangs up
     // initial testing, manually set on/off hook pin to low
-    digitalWrite(ONOFFHOOK_PIN, LOW);
+    //digitalWrite(ONOFFHOOK_PIN, LOW);
     digitalRead(ONOFFHOOK_PIN);
     if (ONOFFHOOK_PIN == LOW) {
       phoneState = ONHOOK_CALLEND;
-    }
-    
-    if () { //howler tone is present
+    } /* else if () { //howler tone is present
       //report to NCID to let user know
       phoneState = ONHOOK_CALLEND;
+    } */ else {
+      phoneState = OFFHOOK_CALLCONN;
     }
   }
 }
@@ -362,7 +370,7 @@ void offHookOutgoing() {
     Serial.println("In phone state: OFFHOOK_OUTGOING");
     delay(1000);
 
-    if () { // solid or stutter tone is detected
+    /* if () { // solid or stutter tone is detected
       // begin dialout timer
       Serial.println("Begin DialoutTimer");
       // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
@@ -381,7 +389,7 @@ void offHookOutgoing() {
       } else {
         phoneState = ONHOOK_CALLEND;
       }
-    }
+    } */
   }
 }
 
@@ -413,6 +421,7 @@ void onHookCallEnd() {
       timerEnd(onHookTimer);
       onHookTimer = NULL;
       timerEnd(callTimer1);
+      Serial.println(call1TimeCounter);
       // report end of call time to ncid
       callTimer1 = NULL;
       // send recording to database
@@ -432,18 +441,18 @@ void AFSKReady(DemodState_t lastAFSKState, uint32_t mstime) {
     }
 
     // v0.44
-    static uint32_t lastTsScanAtMs = 0;
-    if (!modemTST.adcSpiExclusive && ((millis() - lastTsScanAtMs) > 100)) {
-      AFSK_suspend();
+    //static uint32_t lastTsScanAtMs = 0;
+    //if (!modemTST.adcSpiExclusive && ((millis() - lastTsScanAtMs) > 100)) {
+      //AFSK_suspend();
       //handleRingDetector(true);  // v0.72 writes to TFT so suspend demod required.
-      lastTsScanAtMs = mstime;
-    }
+      //lastTsScanAtMs = mstime;
+    //}
 
-    static uint32_t lastLdrAtMs = 0;
-    const uint32_t ldrInterval = 1000UL;  // x seconds
-    if (((mstime - lastLdrAtMs) > ldrInterval) && !modemTST.adcSpiExclusive) {;
-      lastLdrAtMs = mstime;
-    }
+    //static uint32_t lastLdrAtMs = 0;
+    //const uint32_t ldrInterval = 1000UL;  // x seconds
+    //if (((mstime - lastLdrAtMs) > ldrInterval) && !modemTST.adcSpiExclusive) {;
+      //lastLdrAtMs = mstime;
+    //}
 
     static uint32_t lastStatsDumpAtMs = 0;
     const uint32_t statsDumpInterval = 30000UL; // 30 seconds
@@ -463,7 +472,7 @@ void AFSKAltMark(DemodState_t lastAFSKState) {
         Serial.print(F("\n > dmALT_MARK_SPACE"));
       }
 
-      spamFlag = false;  // also cleared in readMcp3002Ch1()
+      //spamFlag = false;  // also cleared in readMcp3002Ch1()
     }
 
     lastAFSKState = dmALT_MARK_SPACE;
@@ -551,9 +560,9 @@ void AFSKCleanUp(DemodState_t lastAFSKState) {
 
     Serial.print(F("\ndata: \n"));
 
-    /* Serial.println(call.date);
-    Serial.println(call.number);
-    Serial.println (call.name); */
+    // Serial.println(call.date);
+    // Serial.println(call.number);
+    // Serial.println (call.name);
 
     StaticJsonDocument<128> doc;
     //char output[128];
@@ -604,6 +613,14 @@ void AFSKErrorx(DemodState_t lastAFSKState) {
   }
 }
 
+void hookState(bool state) {
+  if (state == true) {
+    // send NCID phone is ON HOOK
+  } else {
+    // send NCID phone is OFF hook
+  }
+}
+
 void setup() {
   // open serial connection to output results to serial monitor
   Serial.begin(115200);
@@ -611,14 +628,14 @@ void setup() {
 
   SPI.begin();
 
-  /* configSetup();
+  configSetup();
   // count system restarts
   config.runNumber += 1;   
   
   // resave to eeprom
   eepromDump(); 
   eepromFetch();
-  PrintEepromVariables(); */
+  PrintEepromVariables();
 
   // set input pins
   pinMode(ONOFFHOOK_PIN, INPUT);
@@ -630,6 +647,8 @@ void setup() {
   pinMode(FIRSTRING_PIN, OUTPUT);
   pinMode(DAC1_PIN, OUTPUT);
   pinMode(WSLED_PIN, OUTPUT);
+
+  //pinMode(CAL_PIN, OUTPUT);
 
   delay(10000);
 
@@ -648,8 +667,9 @@ void setup() {
 
   Serial.println(F("Exiting setup()"));
 }
-
+    
 void loop() {
+  //digitalWrite(CAL_PIN, LOW);
   // phone state machine
   switch (phoneState) {
     case ONHOOK_NOCALL:

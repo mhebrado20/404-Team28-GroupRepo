@@ -14,7 +14,7 @@
     output is dropped partially, leading to unpredicatable errors.
 */
 #include "Arduino.h"
-#define swSerial Serial
+//#define swSerial Serial
 
 
 

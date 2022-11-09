@@ -104,7 +104,7 @@ byte parseDemodBitQueue(bool inBit) {
 
       rc = 1;  // end - dmCLEANUP
       if (debugMode > 1) {
-        swSerial.println(F("\n end of packet found"));
+        Serial.println(F("\n end of packet found"));
       }
     }
 
