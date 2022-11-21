@@ -22,6 +22,7 @@ def numFiles(folderLocation):
 
     return n
 
+
 testDirs = []
 
 for root, dirs, files in os.walk("speakers/filesToTest/"):
@@ -33,13 +34,11 @@ testDirectory = []
 for n in testDirs:
     testDirectory += glob.glob(n + "*.wav")
 
-numAmy = numFiles(testDirs[0])
-numMatthew = numFiles(testDirs[1])
-numScott = numFiles(testDirs[2])
+numOfFiles = numFiles(testDirs[0])
 
-AmyAVG = 0
-MatthewAVG = 0
-ScottAVG = 0
+perAVG1 = 0
+perAVG2 = 0
+perAVG3 = 0
 i = 0
 
 
@@ -54,47 +53,42 @@ for f in testDirectory:
     print(f"{f}:")
     c, p, p_nam = aTT.file_classification(f, "grad_all", "gradientboosting")  # orig svm_rbf
 
-    # Amy
     print(f"P({p_nam[0]} = {truncatePrecentage(p[0], 4)})")
-    if 0 < i <= numAmy:
-        AmyAVG += truncatePrecentage(p[0], 4)
-        print("AmyAVG: ", AmyAVG)
+    if 0 < i <= numOfFiles:
+        perAVG1 += truncatePrecentage(p[0], 4)
+        print("AmyAVG: ", perAVG1)
 
     # Matthew
     print(f"P({p_nam[1]} = {truncatePrecentage(p[1], 4)})")
-    if numAmy < i <= (numAmy + numMatthew):
-        MatthewAVG += truncatePrecentage(p[1], 4)
-        print("MatthewAVG: ", MatthewAVG)
+    if 0 < i <= numOfFiles:
+        perAVG2 += truncatePrecentage(p[1], 4)
+        print("MatthewAVG: ", perAVG2)
 
     # Scott
     print(f"P({p_nam[2]} = {truncatePrecentage(p[2], 4)})")
-    if (numAmy + numMatthew) < i <= (numAmy + numMatthew + numScott):
-        ScottAVG += truncatePrecentage(p[2], 4)
-        print("ScottAVG: ", ScottAVG)
+    if 0 < i <= numOfFiles:
+        perAVG3 += truncatePrecentage(p[2], 4)
+        print("ScottAVG: ", perAVG3)
 
     i += 1
     print()
 
-print("AmyAVG: ", AmyAVG)
-print("MatthewAVG: ", MatthewAVG)
-print("ScottAVG: ", ScottAVG)
+print("perAVG1: ", perAVG1)
+print("perAVG2: ", perAVG2)
+print("perAVG3: ", perAVG3)
 
 # Calculate the averages
 # Number of test files are known
 print("\nCalculating Averages: ")
-AmyAVG = AmyAVG / numAmy
-MatthewAVG = MatthewAVG / numMatthew
-ScottAVG = ScottAVG / numScott
-
-print("A: ", numAmy)
-print("M: ", numMatthew)
-print("S: ", numScott)
+perAVG1 = perAVG1 / numOfFiles
+perAVG2 = perAVG2 / numOfFiles
+perAVG3 = perAVG3 / numOfFiles
 
 
 # Final print statements
-print("Testing Amy's Files: ", AmyAVG)
-print("Testing Matthew's Files: ", MatthewAVG)
-print("Testing Scott's Files: ", ScottAVG)
+print("Testing against Amy's Files: ", perAVG1)
+print("Testing against Matthew's Files: ", perAVG2)
+print("Testing against Scott's Files: ", perAVG3)
 
 """
 file_classification looks for a file called "grad_all" with the classification type of

@@ -55,7 +55,7 @@ class AudioSplitter:
     def multipleSplit(self, sec_per_split):
         total_sec = math.ceil(self.getDuration())  # gets the total duration of the audio segment as a whole integer
         # loop starts at 0 until the full duration (s) in intervals of sec_per_split
-        for i in np.arange(0, total_sec, sec_per_split):
+        for i in np.arange(0, total_sec - 0.5, sec_per_split):
             split_fn = str(i) + ".wav"  # define naming sense for the file -- 0.wav . . . 999.wav etc
             self.singleSplit(i, i + sec_per_split, split_fn)  # call single split to create a single interval
             print(str(i) + ' Done')
@@ -83,7 +83,8 @@ def genFiles(d):
         # print("\nf: ", res_str)
         split_wav = AudioSplitter(d, res_str, n)  # call the AudioSplitter class with d (directory) and
         # f (exact filepath)
-        split_wav.multipleSplit(sec_per_split=0.5)  # call multipleSplit to split the audio segment on 1 second intervals
+        split_wav.multipleSplit(sec_per_split=0.5)  # call multipleSplit to split the audio segment on
+        # 0.5 second intervals
         n += 1
 
 
