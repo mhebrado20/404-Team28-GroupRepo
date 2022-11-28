@@ -13,6 +13,18 @@
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
 #include <Adafruit_NeoPixel.h>
+#include <Arduino.h>
+#include <stdio.h>
+#include <I2SMEMSSampler.h>
+#include <ADCSampler.h>
+#include <I2SOutput.h>
+#include <DACOutput.h>
+#include <WAVFileReader.h>
+#include <WAVFileWriter.h>
+#include <Streaming.h>
+#include "FS.h"
+#include "SD.h"
+#include "SPI.h"
 
 // define pins
 #define ONOFFHOOK_PIN 14
@@ -73,7 +85,6 @@ void AFSKAllMarks(DemodState_t lastAFSKState);
 void AFSKData(DemodState_t lastAFSKState);
 void AFSKCleanUp(DemodState_t lastAFSKState);
 void AFSKErrorx(DemodState_t lastAFSKState);
-void hookState(bool state);
 //void ICACHE_FLASH_ATTR handleRingDetector(bool force);
 
 char versionNum[] = "SCID ESP32 Decoding v1.0";
@@ -82,6 +93,7 @@ Afsk modemTST;
 PhoneDTMF dtmf;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(LEDNUM, WSLED_PIN, NEO_GRB + NEO_KHZ800);
+I2SSampler *input = new ADCSampler(ADC_UNIT_1, ADC1_CHANNEL_4, i2s_adc_config);
 
 /************* Timers *************/
 hw_timer_t *callTimer1 = NULL;
@@ -102,65 +114,30 @@ unsigned int ringTimeCounter = 1;
 
 void IRAM_ATTR onCallTimer1() { 
   portENTER_CRITICAL_ISR(&callTimer1Mux);
-
-  Serial.print("CallTime1 ");
-  Serial.print(call1TimeCounter);
-  Serial.print(" at ");
-  Serial.print(millis());
-  Serial.println(" ms");
-
   call1TimeCounter++;
   portEXIT_CRITICAL_ISR(&callTimer1Mux);
 }
 
 void IRAM_ATTR onCallTimer2() { 
   portENTER_CRITICAL_ISR(&callTimer2Mux);
-
-  Serial.print("CallTimer2 ");
-  Serial.print(call2TimeCounter);
-  Serial.print(" at ");
-  Serial.print(millis());
-  Serial.println(" ms");
-
   call2TimeCounter++;
   portEXIT_CRITICAL_ISR(&callTimer2Mux);
 }
 
 void IRAM_ATTR onDialoutTimer() { 
   portENTER_CRITICAL_ISR(&dialoutTimerMux);
-
-  Serial.print("DialoutTimer ");
-  Serial.print(dialoutTimeCounter);
-  Serial.print(" at ");
-  Serial.print(millis());
-  Serial.println(" ms");
-
   dialoutTimeCounter++;
   portEXIT_CRITICAL_ISR(&dialoutTimerMux);
 }
 
 void IRAM_ATTR onOnHookTimer() { 
   portENTER_CRITICAL_ISR(&onHookTimerMux);
-
-  Serial.print("OnHookTimer ");
-  Serial.print(onHookTimeCounter);
-  Serial.print(" at ");
-  Serial.print(millis());
-  Serial.println(" ms");
-
   onHookTimeCounter++;
   portEXIT_CRITICAL_ISR(&onHookTimerMux);
 }
 
 void IRAM_ATTR onRingTimer() { 
   portENTER_CRITICAL_ISR(&ringTimerMux);
-
-  Serial.print("RingTimer ");
-  Serial.print(ringTimeCounter);
-  Serial.print(" at ");
-  Serial.print(millis());
-  Serial.println(" ms");
-
   ringTimeCounter++;
   portEXIT_CRITICAL_ISR(&ringTimerMux);
 }
@@ -238,6 +215,46 @@ void cidSM() {
   }
 }
 
+void record(I2SSampler *input, const char *fname)
+{
+  int16_t *samples = (int16_t *)malloc(sizeof(int16_t) * 1024);
+  printf("Start recording");
+  input->start();
+  // open the file on the sdcard
+  File fp = SD.open(fname, FILE_WRITE);
+  // create a new wave file writer
+  // WAVFileWriter *writer = new WAVFileWriter(fp, input->sample_rate()); //need to replac
+  // write out the header - we'll fill in some of the blanks later
+  
+  // keep writing until the user releases the button
+  while ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH))
+  {
+    int samples_read = input->read(samples, 1024);
+    int64_t start = esp_timer_get_time();
+    // writer->write(samples, samples_read);
+    // fwrite(samples, sizeof(int16_t), samples_read, fp);
+    fp.write((uint8_t *)samples, sizeof(int16_t) * samples_read);
+    int64_t end = esp_timer_get_time();
+    printf("Wrote %d samples in %lld microseconds", samples_read, end - start);
+    printf("\n");
+  }
+  // stop the input
+  printf("\n");
+  printf("exited loop\n");
+  input->stop();
+  // and finish the writing
+  // writer->finish(); //need to replace
+  // now fill in the header with the correct information and write it again
+  printf("before close\n");
+  fp.close();
+  printf("after close\n");
+  // delete writer;
+  printf("before free sample\n");
+  free(samples);
+  printf("Finished recording\n");
+  // printf("Finished recording");
+}
+
 /************* ONHOOK_NOCALL *************/
 /*  State: phone is on hook and is waiting for a call
     1. detects when the ring pin is triggered (phone is ringing)
@@ -250,34 +267,46 @@ void cidSM() {
 */
 void onHookNoCall() {
   if (phoneState == ONHOOK_NOCALL) {
-    //Serial.println("In phone state: ONHOOK_NOCALL");
-    //delay(1000);
-    // Clear the buffer.
+    Serial.println("In phone state: ONHOOK_NOCALL");
     display.clearDisplay();
-    display.display();
-    display.setTextSize(1);
+    display.setCursor(0, 1);
+    display.setTextSize(0.5);
     display.setTextColor(WHITE);
-    display.setCursor(0, 5);
     // Display static text
-    display.println("PHONE STATE: On Hook, waiting for call..");
+    display.println("PHONE STATE: On Hook, waiting for action..");
     display.display();
     delay(1000);
 
     // get ready to suppress first ring
+    //Serial.println(digitalRead(FIRSTRING_PIN));
     digitalWrite(FIRSTRING_PIN, HIGH);
 
     // testing purposes, manually set ring pin to high
-    //digitalWrite(RING_PIN, HIGH);
+    //Serial.println(digitalRead(RING_PIN));
     if (digitalRead(RING_PIN) == HIGH) {
       // Initial ring supression get CID
-      cidSM();
-
+      digitalWrite(FIRSTRING_PIN, LOW);
+      //cidSM();
+      
       // see if the call number matches blacklist
       if (numberMatchesBL == true) { // cid matches blacklist
         //HUP or fax tone
+        for(int i = 0; i < LEDNUM; i++) { // For each pixel...
+          // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+          leds.setPixelColor(i, leds.Color(255, 0, 0));
+          leds.show();   // Send the updated pixel colors to the hardware.
+          //delay(500); // Pause before next pass through loop
+        }
       } else {
         // initial ring is suppressed, let the phone continue ringging after a delay
-        delay(1000);
+        //delay(1000);
+        for(int i = 0; i < LEDNUM; i++) { // For each pixel...
+          // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+          leds.setPixelColor(i, leds.Color(0, 0, 255));
+          leds.show();   // Send the updated pixel colors to the hardware.
+          //delay(500); // Pause before next pass through loop
+        }
+
         digitalWrite(FIRSTRING_PIN, LOW);
         // begin ringing timer
         Serial.println("Begin RingTimer");
@@ -292,19 +321,24 @@ void onHookNoCall() {
         // Start an alarm
         timerAlarmEnable(ringTimer);
 
-        if ((ringTimeCounter > 36) && ((digitalRead(ONOFFHOOK_PIN) == LOW) || (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW))) {
+        if ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
+          phoneState = OFFHOOK_CALLCONN;
+          // report to NCID
+        } else if ((ringTimeCounter > 36) && ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW))) {
           timerEnd(ringTimer);
           ringTimer = NULL;
           phoneState = ONHOOK_CALLEND;
-        } else if ((digitalRead(ONOFFHOOK_PIN) == HIGH) || (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
-          phoneState = OFFHOOK_CALLCONN;
-          // report to NCID
         }
-      }      
+
+      }
+    }   
+    //Serial.println(digitalRead(ONOFFHOOK_PIN));
     // outgoing call
-    } else if ((digitalRead(ONOFFHOOK_PIN) == HIGH) || (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) { // OR if .json file is received from gateway to have NCID make call
+    if ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) { // OR if .json file is received from gateway to have NCID make call
       phoneState = OFFHOOK_OUTGOING;
-      // report to
+      // report to ncid
+    } else {
+      phoneState = ONHOOK_NOCALL;
     }
   }
 }
@@ -323,23 +357,21 @@ void onHookNoCall() {
 */
 void offHookCallConn() {
   if (phoneState == OFFHOOK_CALLCONN) {
-    //Serial.println("In phone state: OFFHOOK_CALLCONN");
-    //delay(1000);
+    Serial.println("In phone state: OFFHOOK_CALLCONN");
     display.clearDisplay();
-    display.display();
-    display.setTextSize(1);
+    display.setCursor(0, 1);
+    display.setTextSize(0.5);
     display.setTextColor(WHITE);
-    display.setCursor(0, 5);
     // Display static text
     display.println("PHONE STATE: Off Hook, call connected..");
     display.display();
     delay(1000);
 
     Serial.println("Call 1 connected.");
-    callOngoing = true;
 
-    // begin call 1 recording and timer
-    Serial.println("Begin CallTimer1");
+        // begin call 1 recording and timer
+    record(input, "/test.raw");
+    /* Serial.println("Begin CallTimer1");
     // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
     // info).
     callTimer1 = timerBegin(0, 80, true);
@@ -349,15 +381,18 @@ void offHookCallConn() {
     // Repeat the alarm (third parameter)
     timerAlarmWrite(callTimer1, 1000000, true);
     // Start an alarm
-    timerAlarmEnable(callTimer1);
+    timerAlarmEnable(callTimer1); */
 
-    uint8_t tones = dtmf.detect();
+    while ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
+      
+    }
+    /* uint8_t tones = dtmf.detect();
     char button = dtmf.tone2char(tones);
     if(button > 0) {
       Serial.print(button);
       Serial.println(" pressed");
     }
-    delay(1000);
+    delay(1000); */
 
     /* if () { // CPE Alerting Signal (CAS) detected
       // get cwid
@@ -379,8 +414,7 @@ void offHookCallConn() {
     // if user hangs up
     // initial testing, manually set on/off hook pin to low
     //digitalWrite(ONOFFHOOK_PIN, LOW);
-    digitalRead(ONOFFHOOK_PIN);
-    if (ONOFFHOOK_PIN == LOW) {
+    if ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW)) {
       phoneState = ONHOOK_CALLEND;
     } /* else if () { //howler tone is present
       //report to NCID to let user know
@@ -402,17 +436,18 @@ void offHookCallConn() {
 */
 void offHookOutgoing() {
   if (phoneState == OFFHOOK_OUTGOING) {
-    //Serial.println("In phone state: OFFHOOK_OUTGOING");
-    //delay(1000);
+    Serial.println("In phone state: OFFHOOK_OUTGOING");
     display.clearDisplay();
-    display.display();
-    display.setTextSize(1);
+    display.setCursor(0, 1);
+    display.setTextSize(0.5);
     display.setTextColor(WHITE);
-    display.setCursor(0, 5);
     // Display static text
-    display.println("PHONE STATE: Off Hook, making an outgoing call..");
+    display.println("PHONE STATE: Off Hook, outgoing call..");
     display.display();
     delay(1000);
+
+    // start recording of outgoing call
+    record(input, "/test.raw");
 
     /* if () { // solid or stutter tone is detected
       // begin dialout timer
@@ -434,6 +469,9 @@ void offHookOutgoing() {
         phoneState = ONHOOK_CALLEND;
       }
     } */
+    if ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW)) {
+      phoneState = ONHOOK_CALLEND;
+    }
   }
 }
 
@@ -446,31 +484,36 @@ void offHookOutgoing() {
 */
 void onHookCallEnd() {
   if (phoneState == ONHOOK_CALLEND) {
-    //Serial.println("In phone state: ONHOOK_CALLEND");
-    //delay(1000);
+    Serial.println("In phone state: ONHOOK_CALLEND");
     display.clearDisplay();
-    display.display();
-    display.setTextSize(1);
+    display.setCursor(0, 1);
+    display.setTextSize(0.5);
     display.setTextColor(WHITE);
-    display.setCursor(0, 5);
     // Display static text
     display.println("PHONE STATE: On Hook, call ended..");
     display.display();
     delay(1000);
 
-    Serial.println("Begin OnHookTimer");
+    //Serial.println("Begin OnHookTimer");
     // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
     // info).
-    onHookTimer = timerBegin(0, 80, true);
+    /* onHookTimer = timerBegin(0, 80, true);
     // Attach onTimer function to our timer.
     timerAttachInterrupt(onHookTimer, &onOnHookTimer, true);
     // Set alarm to call onTimer function every second (value in microseconds).
     // Repeat the alarm (third parameter)
     timerAlarmWrite(onHookTimer, 1000000, true);
     // Start an alarm
-    timerAlarmEnable(onHookTimer);  
+    timerAlarmEnable(onHookTimer);  */ 
 
-    if ((onHookTimeCounter > 5) && ((ONOFFHOOK_PIN == LOW) || (ONOFFHOOK_WHYS_PIN == LOW))) {
+    for(int i = 0; i < LEDNUM; i++) { // For each pixel...
+      // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
+      leds.setPixelColor(i, leds.Color(0, 0, 0));
+      leds.show();   // Send the updated pixel colors to the hardware.
+      //delay(500); // Pause before next pass through loop
+    }
+
+    /* if ((onHookTimeCounter > 5)) {
       timerEnd(onHookTimer);
       onHookTimer = NULL;
       timerEnd(callTimer1);
@@ -478,7 +521,9 @@ void onHookCallEnd() {
       // report end of call time to ncid
       callTimer1 = NULL;
       // send recording to database
-    }
+      // tell user to hang up
+      phoneState = ONHOOK_NOCALL;
+    } */
     phoneState = ONHOOK_NOCALL;
   }
 }
@@ -625,6 +670,17 @@ void AFSKCleanUp(DemodState_t lastAFSKState) {
     //serializeJson(doc, output);
     serializeJsonPretty(doc, Serial);
 
+    display.clearDisplay();
+    display.setCursor(0, 1);
+    display.setTextSize(0.5);
+    // Display static text
+    display.print("Name: ");
+    display.println(call.name);
+    display.print("Phone Number: ");
+    display.println(call.number);
+    display.display();
+    delay(1000);
+
     Serial.print(F("\nOK / total: "));
     Serial.print(successCountLoop);
     Serial.print(" / ");
@@ -666,20 +722,10 @@ void AFSKErrorx(DemodState_t lastAFSKState) {
   }
 }
 
-void hookState(bool state) {
-  if (state == true) {
-    // send NCID phone is ON HOOK
-  } else {
-    // send NCID phone is OFF hook
-  }
-}
-
 void setup() {
   // open serial connection to output results to serial monitor
   Serial.begin(115200);
   Serial.println(versionNum);
-
-  //SPI.begin();
 
   //configSetup();
   // count system restarts
@@ -695,16 +741,38 @@ void setup() {
   pinMode(ONOFFHOOK_WHYS_PIN, INPUT);
   pinMode(CAL_PIN, INPUT);
   pinMode(RING_PIN, INPUT);
+  pinMode(ADC1_PIN, INPUT);
 
   // set output pins
   pinMode(FIRSTRING_PIN, OUTPUT);
   pinMode(DAC1_PIN, OUTPUT);
   pinMode(WSLED_PIN, OUTPUT);
-  digitalWrite(WSLED_PIN, HIGH);
-
-  //pinMode(CAL_PIN, OUTPUT);
 
   delay(1000);
+
+  // set up sd card
+  if(!SD.begin()){
+      Serial.println("Card Mount Failed");
+      return;
+  }
+
+  uint8_t cardType = SD.cardType();
+
+  if(cardType == CARD_NONE){
+      Serial.println("No SD card attached");
+      return;
+  }
+
+  Serial.print("SD Card Type: ");
+  if(cardType == CARD_MMC){
+      Serial.println("MMC");
+  } else if(cardType == CARD_SD){
+      Serial.println("SDSC");
+  } else if(cardType == CARD_SDHC){
+      Serial.println("SDHC");
+  } else {
+      Serial.println("UNKNOWN");
+  }
   
   // set up displays and wsleds
   // initialize OLED display with I2C address 0x3C
@@ -717,26 +785,12 @@ void setup() {
   leds.setBrightness(50);
   leds.show();
   leds.clear();
-  for(int i=0; i<LEDNUM; i++) { // For each pixel...
+  for(int i = 0; i < LEDNUM; i++) { // For each pixel...
     // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-    leds.setPixelColor(i, leds.Color(0, 0, 150));
+    leds.setPixelColor(i, leds.Color(0, 0, 0));
     leds.show();   // Send the updated pixel colors to the hardware.
     //delay(500); // Pause before next pass through loop
   }
-
-  /* // Clear the buffer.
-  delay(2000);
-  display.clearDisplay();
-
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-  // Display static text
-  display.println("Hello, world!");
-  display.display();
-  delay(2000);
-  display.clearDisplay();
-  display.display(); */
 
   // setup timer and ADC. From here on, SPI slaves (TS, TFT & ADC) must be interlocked.
   AFSK_init(&modemTST);
@@ -746,9 +800,9 @@ void setup() {
   delay(2000);
   display.clearDisplay();
   display.display();
-  display.setTextSize(1);
+  display.setCursor(0, 1);
+  display.setTextSize(0.5);
   display.setTextColor(WHITE);
-  display.setCursor(0, 5);
   // Display static text
   display.println("PHONE STATE: On Hook, waiting for call..");
   display.display();
@@ -763,7 +817,6 @@ void setup() {
 }
 
 void loop() {
-  //digitalWrite(CAL_PIN, LOW);
   // phone state machine
   switch (phoneState) {
     case ONHOOK_NOCALL:
