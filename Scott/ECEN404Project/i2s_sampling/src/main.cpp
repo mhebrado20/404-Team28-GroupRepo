@@ -9,7 +9,21 @@
 #include <stdio.h>
 #include "base64.hpp"
 #include <ardubson.h>
+#include <cmath>
+#include <fstream>
+using namespace std;
 
+namespace little_endian_io
+{
+  template <typename Word>
+  std::ostream& write_word( std::ostream& outs, Word value, unsigned size = sizeof( Word ) )
+  {
+    for (; size; --size, value >>= 8)
+      outs.put( static_cast <char> (value & 0xFF) );
+    return outs;
+  }
+}
+using namespace little_endian_io;
 
 ADCSampler *adcSampler = NULL;
 I2SSampler *i2sSampler = NULL;
@@ -74,7 +88,7 @@ void printHex(unsigned char* data, int len) {
 // i2s config for using the internal ADC
 i2s_config_t adcI2SConfig = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
-    .sample_rate = 16000,
+    .sample_rate = 8000,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
     .communication_format = I2S_COMM_FORMAT_I2S_LSB,
@@ -97,7 +111,7 @@ i2s_pin_config_t i2sPins = {
 
 
 // how many samples to read at once
-const int SAMPLE_SIZE = 16384; //16384
+const int SAMPLE_SIZE = 8192; //16384
 
 
 // send data to a serial port
@@ -185,7 +199,52 @@ void sendData(uint8_t *bytes, size_t count)
   // BSONElement bson_bytes;
   // bson_bytes.Key("audio").Value(bytes);
   // Serial.println(bson_bytes.Value());
-  printHex(bytes, count);
+  // printHex(bytes, count);
+
+  ofstream f( "example.wav", ios::binary );
+
+  // Write the file headers
+  f << "RIFF----WAVEfmt ";     // (chunk size to be filled in later)
+  write_word( f,     16, 4 );  // no extension data
+  write_word( f,      1, 2 );  // PCM - integer samples
+  write_word( f,      2, 2 );  // two channels (stereo file)
+  write_word( f,   8000, 4 );  // samples per second (Hz)
+  write_word( f,  32000, 4 );  // (Sample Rate * BitsPerSample * Channels) / 8
+  write_word( f,      4, 2 );  // data block size (size of two integer samples, one for each channel, in bytes)
+  write_word( f,     16, 2 );  // number of bits per sample (use a multiple of 8)
+
+  // Write the data chunk header
+  size_t data_chunk_pos = f.tellp();
+  f << "data----";  // (chunk size to be filled in later)
+  
+  // Write the audio samples
+  // (We'll generate a single C4 note with a sine wave, fading from left to right)
+  // constexpr double two_pi = 6.283185307179586476925286766559;
+  constexpr double max_amplitude = 32760;  // "volume"
+
+  double hz        = 8000;    // samples per second
+  // double frequency = 261.626;  // middle C
+  double seconds   = 5;      // time
+
+  int N = hz * seconds;  // total number of samples
+  for (int n = 0; n < N; n+=2)
+  {
+    // double amplitude = (double)n / N * max_amplitude;
+    // double value     = sin( (two_pi * n * frequency) / hz );
+    write_word( f, (int)(bytes[n] + bytes[n+1]), 2 );
+    // write_word( f, (int)((max_amplitude - amplitude) * value), 2 );
+  }
+  
+  // (We'll need the final file size to fix the chunk sizes above)
+  size_t file_length = f.tellp();
+
+  // Fix the data chunk header to contain the data size
+  f.seekp( data_chunk_pos + 4 );
+  write_word( f, file_length - data_chunk_pos + 8 );
+
+  // Fix the file header to contain the proper RIFF chunk size, which is (file size - 8) bytes
+  f.seekp( 0 + 4 );
+  write_word( f, file_length - 8, 4 );
 }
 
 

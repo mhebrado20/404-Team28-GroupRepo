@@ -44,8 +44,8 @@ def remove_silence(read_location: str, write_location: str, file_name: str):
     # concatenate segments to signal:
     new_signal = np.concatenate(segments2)
 
-    if fs == 9600:  # hard coded bit rate of files we know will be mono audio
-        np.reshape(new_signal, new_signal.size)
+    if fs == 16000:  # hard coded bit rate of files we know will be mono audio
+        np.reshape(new_signal, 1)
 
     # checks that write location is an existing file and creates it if it does not exist
     if not Path(write_location).exists():
@@ -60,16 +60,17 @@ def remove_silence(read_location: str, write_location: str, file_name: str):
     # return new_signal
 
 
-"""
+
 print('Starting Amy\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/trainingwav', 'C:/Users/sky20/Desktop/serialrecording/trainingwav', '/amyrec')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/alittleloudertest_amy_audacityNoiseRed')
 print('Done with Amy\'s file')
 
+"""
 print('Starting Scott\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/trainingwav', 'C:/Users/sky20/Desktop/serialrecording/trainingwav', '/scottrec')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/normalvoicetest_amy')
 print('Done with Scott\'s file')
 
 print('Starting Matthew\'s file')
-remove_silence('C:/Users/sky20/Desktop/serialrecording/trainingwav', 'C:/Users/sky20/Desktop/serialrecording/trainingwav', '/matthewrec')
+remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/testWithLouderVoice_scott')
 print('Done with Matthew\'s file')
 """
