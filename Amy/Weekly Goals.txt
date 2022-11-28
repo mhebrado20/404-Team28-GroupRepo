@@ -25,3 +25,70 @@ Lab 9/9
 		1. Complete state machine code
 		2. Solder parts on PCB
 		3. Begin testing PCB
+
+Lab 9/16
+	What I've done:
+		1. Began testing PCB
+		2. Loading 6g6vt code onto ESP32
+		3. Began integrating 6v6gt code to my state machine code
+	Goals for next week:
+		1. Edit 2nd round of PCB
+		2. Order 2nd round of PCB
+		3. Keep working towards finishing state maching code
+
+Lab 9/23
+	What I've done:
+		1. Made edits to PCB
+			- Increased 3V3 power trace width to 0.635 mm
+			- Moved phone jacks, ESP32, and SD card adapter to the edge of the board
+		2. Made edits to schematic
+			- Fixed connections on pin 5 and 6 of U6
+			- Moved FIRSTRING output pin from 34 (only input pin) to 26
+			- Opened 2nd GND pin on esp32 and connected it to GND.
+			- Changed J3 Tip+ to Ring+.
+		3. Edited and tested first PCB
+			- Cut trace from R7 to R8.
+			- Cut trace from R7 to R14.
+			- Connected R7 to pin 5 of U6
+			- Connected R8 to R14.
+			- Connected R14 to pin 6 of U6.
+			- Ring detection worked
+			- Ring suppression didn't work? -- I didn't have Ring pin connected to Ring, FirstRing needed to
+				be on high
+			- Phone pick up detection worked
+			- On/off hook detection worked
+			- Hook flash detection worked
+			- LED doesn't light up, need to switch MOSFET
+			- Hysteresis probably don't need..
+			- Incoming voice disappears after R6
+			- Ordered Micro SD card connector, need to make symbol and footprint for schematic and PCB
+		4. Edited second PCB
+			- Cut trace from R7 to R8.
+			- Cut trace from R7 to R14.
+			- Connected R7 to pin 5 of U6
+			- Connected R8 to R14.
+			- Connected R14 to pin 6 of U6.
+			- Phone pick up detection worked
+	Goals for next week:
+		1. Finish up debugging
+		2. Order PCB
+
+Lab 9/30
+	What I've done:
+		1. Make edits to schematic
+			- Drawn rectangles on board for each subcircuit
+			- Changed M1 to Q1
+			- Switched Q1 IRF530PBF to 2N7000
+			- Made sure capacitors were all ceramics
+			- Replaced resistors < 5% to 5% tolerance
+			- Added test points
+		2. Ordered PCB
+	Goals for next week:
+		1. Work with Scott to read audio out of DAC
+		2. Work on state machine code
+
+
+Lab 10/7:
+	What I've done:
+		1. Successfully inputted Scot's audio code into DAC
+			- Noticed some clipping at output with 3.2 Vpp
