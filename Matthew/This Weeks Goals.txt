@@ -1,8 +1,0 @@
-Matthew Hebrado
-827003132
-
-Lab Date 9/1
-Goals for next week:
-1) I plan to finish implementing my code onto my pi.
-2) Additionally, I am going to work on my ML code to account for unknown voices to be passed through the system.
-   As of right now I am still figuring out a way to tackle this issue.
