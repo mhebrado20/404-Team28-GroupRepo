@@ -215,6 +215,30 @@ void cidSM() {
   }
 }
 
+void printHex(unsigned char* data, int len) 
+{
+  for (int i = 0; i < len; i++, data++) {
+    Serial.print("0x");
+    if ((unsigned char)data <= 0xF) Serial.print("0");
+    Serial.print((unsigned char)data, HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
+}
+
+void serialize(const char *fname)
+{
+  File fp = SD.open(fname, FILE_READ);
+
+  unsigned char data[1024];
+
+  for (int i = 0; i < 1023; i++) {
+    data[i] = fp.read();
+  }
+
+  printHex(data, 1024);
+}
+
 void record(I2SSampler *input, const char *fname)
 {
   int16_t *samples = (int16_t *)malloc(sizeof(int16_t) * 1024);
@@ -383,9 +407,9 @@ void offHookCallConn() {
     // Start an alarm
     timerAlarmEnable(callTimer1); */
 
-    while ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
+    //while ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
       
-    }
+    //}
     /* uint8_t tones = dtmf.detect();
     char button = dtmf.tone2char(tones);
     if(button > 0) {
@@ -493,6 +517,8 @@ void onHookCallEnd() {
     display.println("PHONE STATE: On Hook, call ended..");
     display.display();
     delay(1000);
+
+    serialize("test");
 
     //Serial.println("Begin OnHookTimer");
     // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
