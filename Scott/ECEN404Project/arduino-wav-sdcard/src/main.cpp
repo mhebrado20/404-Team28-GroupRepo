@@ -15,44 +15,14 @@
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
-#include <ArduinoJson.h>
 
 
-#define ONOFFHOOK_PIN 14
-//#define ONOFFHOOK_WHYS_PIN 27
-
-void printHex(unsigned char* data, int len) 
+void wait_for_button_push()
 {
-  for (int i = 0; i < len; i++, data++) {
-    Serial.print("0x");
-    if ((unsigned char)*data <= 0xF) Serial.print("0");
-    Serial.print((unsigned char)*data, HEX);
-    Serial.print(" ");
-  }
-  Serial.println();
-}
-
-void wait_for_offhook()
-{
-  //Serial.println((digitalRead(ONOFFHOOK_PIN)));
-  while ((digitalRead(ONOFFHOOK_PIN) == HIGH))
+  while (gpio_get_level(GPIO_BUTTON) == 0)
   {
-    //vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
-}
-
-void serialize(const char *fname)
-{
-  File fp = SD.open(fname, FILE_READ);
-
-  unsigned char data[1024];
-
-  for (int i = 0; i < 1023; i++) {
-    data[i] = fp.read();
-  }
-  
-  printHex(data, 1024);
-  
 }
 
 void record(I2SSampler *input, const char *fname)
@@ -67,7 +37,7 @@ void record(I2SSampler *input, const char *fname)
   // write out the header - we'll fill in some of the blanks later
   
   // keep writing until the user releases the button
-  while ((digitalRead(ONOFFHOOK_PIN) == LOW))
+  while (gpio_get_level(GPIO_BUTTON) == 1)
   {
     int samples_read = input->read(samples, 1024);
     int64_t start = esp_timer_get_time();
@@ -76,22 +46,21 @@ void record(I2SSampler *input, const char *fname)
     fp.write((uint8_t *)samples, sizeof(int16_t) * samples_read);
     int64_t end = esp_timer_get_time();
     printf("Wrote %d samples in %lld microseconds", samples_read, end - start);
-    printf("\n");
   }
   // stop the input
-  // printf("\n");
-  // printf("exited loop\n");
+  printf("\n");
+  printf("exited loop\n");
   input->stop();
   // and finish the writing
   // writer->finish(); //need to replace
   // now fill in the header with the correct information and write it again
-  // printf("before close\n");
+  printf("before close\n");
   fp.close();
-  // printf("after close\n");
+  printf("after close\n");
   // delete writer;
-  // printf("before free sample\n");
+  printf("before free sample\n");
   free(samples);
-  // printf("Finished recording\n");
+  printf("Finished recording\n");
   // printf("Finished recording");
 }
 
@@ -131,13 +100,13 @@ void main_task(void *param)
 {
   printf("Starting up");
 
-  // USE_SPIFFS
+// USE_SPIFFS
   // printf(TAG, "Mounting SPIFFS on /sdcard");
   // SPIFFS.begin(true, "/sdcard");
 
-  printf("Mounting SDCard on /sdcard");
-  // new SDCard("/sdcard", PIN_NUM_MISO, PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
-  if(!SD.begin()){
+printf("Mounting SDCard on /sdcard");
+// new SDCard("/sdcard", PIN_NUM_MISO, PIN_NUM_MOSI, PIN_NUM_CLK, PIN_NUM_CS);
+if(!SD.begin()){
       Serial.println("Card Mount Failed");
       return;
   }
@@ -160,7 +129,7 @@ void main_task(void *param)
   }
 
   // ESP_LOGI("Creating microphone");
-  I2SSampler *input = new ADCSampler(ADC_UNIT_1, ADC1_CHANNEL_4, i2s_adc_config);
+  I2SSampler *input = new ADCSampler(ADC_UNIT_1, ADC1_CHANNEL_7, i2s_adc_config);
 
 
 /*
@@ -171,19 +140,13 @@ void main_task(void *param)
 #endif
 */
 
-  //gpio_set_direction(GPIO_BUTTON, GPIO_MODE_INPUT);
-  //gpio_set_pull_mode(GPIO_BUTTON, GPIO_PULLDOWN_ONLY);
+  gpio_set_direction(GPIO_BUTTON, GPIO_MODE_INPUT);
+  gpio_set_pull_mode(GPIO_BUTTON, GPIO_PULLDOWN_ONLY);
 
   while (true)
   {
-    //Serial.println((digitalRead(ONOFFHOOK_PIN)));
     // wait for the user to push and hold the button
-    wait_for_offhook();
-    /*
-    if (GPIO_NUM_14 != 1) {
-      record(input, "/test.raw");
-    }
-    */
+    wait_for_button_push();
     record(input, "/test.raw");
     // wait for the user to push the button again
     /*
@@ -197,10 +160,6 @@ void main_task(void *param)
 void setup()
 {
   Serial.begin(115200);
-  
-  pinMode(ONOFFHOOK_PIN, INPUT);
-  //pinMode(ONOFFHOOK_WHYS_PIN, INPUT);
-  
   xTaskCreate(main_task, "Main", 4096, NULL, 0, NULL);
 }
 
