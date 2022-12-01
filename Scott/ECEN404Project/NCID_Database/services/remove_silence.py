@@ -60,6 +60,13 @@ def remove_silence(read_location: str, write_location: str, file_name: str):
 
 
 # Test statements
+# integration with ML subsystem
+# takes in a file and removes silence
+print('Starting Amy\'s file')
+remove_silence('D:/Documents/School/College/Senior/S3/ECEN 404/404-Team28-GroupRepo/Matthew/voiceMap/speakers/Amy/',
+               'D:/Documents/School/College/Senior/S3/ECEN 404/404-Team28-GroupRepo/Matthew/voiceMap/speakers/Amy/',
+               '/amyrec')
+print('Done with Amy\'s file')
 """
 print('Starting Amy\'s file')
 remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/alittleloudertest_amy_audacityNoiseRed')
