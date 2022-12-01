@@ -82,19 +82,18 @@ void record(I2SSampler *input, const char *fname)
     printf("\n");
   }
   // stop the input
-  printf("\n");
-  printf("exited loop\n");
+  // printf("\n");
+  // printf("exited loop\n");
   input->stop();
   // and finish the writing
-  // writer->finish(); //need to replace
   // now fill in the header with the correct information and write it again
-  printf("before close\n");
+  // printf("before close\n");
   fp.close();
-  printf("after close\n");
+  // printf("after close\n");
   // delete writer;
-  printf("before free sample\n");
+  // printf("before free sample\n");
   free(samples);
-  printf("Finished recording\n");
+  // printf("Finished recording\n");
   // printf("Finished recording");
 }
 
@@ -194,7 +193,9 @@ void main_task(void *param)
     play(output, "/sdcard/test.wav");
     */
     vTaskDelay(pdMS_TO_TICKS(1000));
+    Serial.println("8");
     serialize("/test.raw");
+    Serial.println("7");
   }
 }
 

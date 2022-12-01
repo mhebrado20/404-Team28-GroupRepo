@@ -12,7 +12,7 @@ connection = mongo_setup.global_initialization()
 # ui.run()  # This executes the run() function from user_interface.py
 
 # to be triggered by recording variable sent by esp32
-jdt.record_audio('COM3', 'C:/Users/sky20/Desktop/serialrecording')
+# jdt.record_audio('COM3', 'C:/Users/sky20/Desktop/serialrecording')
 # to be triggered by end of call upload folder variable (on-hook)
 # ud.upload_folder('C:/Users/sky20/Desktop/serialrecording',
 #                  'C:/Users/sky20/Desktop/404-Team28-GroupRepo/Matthew/voiceMap/speakers/filesToTest', 'recording')
