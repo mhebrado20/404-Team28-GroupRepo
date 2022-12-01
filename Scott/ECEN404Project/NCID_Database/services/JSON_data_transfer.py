@@ -11,61 +11,19 @@ import time
 import matplotlib.pyplot as plt
 import codecs
 
-"""
-class Decoder(json.JSONDecoder):
-    def decode(self, s):
-        result = super().decode(s)  # result = super(Decoder, self).decode(s) for Python 2.x
-        return self._decode(result)
-
-    def _decode(self, o):
-        if isinstance(o, str):
-            try:
-                return int(o)
-            except ValueError:
-                return o
-        elif isinstance(o, dict):
-            return {k: self._decode(v) for k, v in o.items()}
-        elif isinstance(o, list):
-            return [self._decode(v) for v in o]
-        else:
-            return o
-"""
-
 
 def record_audio(port: str, filelocation: str, samplerate: int = 16000, chunk: int = 1024,
-                 baudrate: int = 115200):
+                 baudrate: int = 256000):
     connection = serial.Serial(port=port, baudrate=baudrate)
     connection.reset_input_buffer()
 
     # 16 bits per sample
     chans = 1
-
-    """
-    # time for name
-    time_now = datetime.now()
-    current_time = time_now.strftime("%H:%M:%S")
-    date_now = date.today()
-    current_date = date_now.strftime("%y/%m/%d_")
-    complete_time = current_date + current_time
-    """
-
     smpl_rt = samplerate
-    seconds = 10
     filename = filelocation + '/recording' + str(num_files(filelocation)) + '.wav'
-    # Create an interface to PortAudio
-    # pa = pyaudio.PyAudio()
 
     print('recording\n')
 
-    # Initialize array that be used for storing frames
-    # frames = []
-
-    # Store data in chunks for 8 seconds
-    # print("int(smpl_rt / chunk * seconds)", int(smpl_rt / chunk * seconds))
-    timeout_start = time.time()
-
-    audio_data = np.array([], dtype=np.uint16, ndmin=1)
-    # data = np.array([], dtype=np.uint8)
     
     """
         This while loop records for a set amount of time set by the variable seconds, the intent is to read the data
@@ -76,19 +34,23 @@ def record_audio(port: str, filelocation: str, samplerate: int = 16000, chunk: i
         this may need to be written as a raw file and converted using ffmpeg, but the functionality for converting has
         already been implemented by Matthew
     """
-    print("Start initialize serial data")
+    print("Start initialize serial data")  # debug statement
     arr = np.array([])
     arr2 = np.array([])
     array = []
     n = 0
     data = []
-    while time.time() < timeout_start + seconds:
-        # connection.reset_input_buffer()
-        data = connection.readline().split()
-        if n > 1:
-            array.extend(data)
-            print(len(array))
-        n += 1
+    print("start loop")  # debug statement
+    while True:
+        print(connection.readline())
+        if connection.readline() == '8':
+            print("made it into if statement")
+            while connection.readline() != '7':
+                data = connection.readline()
+                array.extend(data)
+                # print(len(array))
+            return
+
         # arr = np.fromiter((int(x, base=16) for x in data.split()), dtype=np.uint16)
         # data = np.frombuffer(connection.readline(), dtype=np.uint8, count=-1, offset=0, like=audio_data)
         # print("data initialize")
@@ -109,17 +71,6 @@ def record_audio(port: str, filelocation: str, samplerate: int = 16000, chunk: i
     array = arr2
     print(array)
 
-    plt.rcParams["figure.figsize"] = [7.50, 3.50]
-    plt.rcParams["figure.autolayout"] = True
-
-    x = arr2
-    y = np.sort(x)
-
-    plt.title("Line graph")
-    plt.plot(x, y, color="red")
-
-    plt.show()
-
     """
     sf = wave.open(filename, 'wb')
     sf.setnchannels(chans)
@@ -129,10 +80,7 @@ def record_audio(port: str, filelocation: str, samplerate: int = 16000, chunk: i
     sf.close()
     """
 
-    print("done recording")
-
-
-# record_audio('COM3', 'C:/Users/sky20/Desktop/serialrecording')
+    print("done recording")  # debug statement
 
 
 def ncid_msg_print(confidence_value: float, host="127.0.0.1", port="3334", line=""):
@@ -145,7 +93,8 @@ def ncid_msg_print(confidence_value: float, host="127.0.0.1", port="3334", line=
     date_now = date.today()
     current_date = date_now.strftime("%y/%m/%d")
     if confidence_value > 75:
-        print(r"MSG: <NCID-Defender has detected that the caller is on the NCID-Defender voicematch whitelist; ACCURACY:"
+        print(r"MSG: <NCID-Defender has detected that the caller is on the NCID-Defender voicematch whitelist; "
+              r"ACCURACY:"
               + str(confidence_value) + "%> "
               r"###DATE*<" + current_date + ">"
               r"*TIME*<" + current_time + ">"
@@ -154,7 +103,8 @@ def ncid_msg_print(confidence_value: float, host="127.0.0.1", port="3334", line=
               r"*MTYPE*SYS"
               r"*NAME*<NCID-Defender>*")
     elif confidence_value < 75:
-        print(r"MSG: <NCID-Defender has detected that the caller is not on the NCID-Defender voicematch whitelist; ACCURACY:"
+        print(r"MSG: <NCID-Defender has detected that the caller is not on the NCID-Defender voicematch whitelist; "
+              r"ACCURACY:"
               + str(confidence_value) + "%> "
               r"###DATE*<" + current_date + ">"
               r"*TIME*<" + current_time + ">"

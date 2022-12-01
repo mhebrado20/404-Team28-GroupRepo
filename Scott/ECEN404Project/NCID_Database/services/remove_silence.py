@@ -44,28 +44,27 @@ def remove_silence(read_location: str, write_location: str, file_name: str):
     # concatenate segments to signal:
     new_signal = np.concatenate(segments2)
 
-    if fs == 16000:  # hard coded bit rate of files we know will be mono audio
+    ### IMPORTANT ###
+    if fs == 16000:  # hard coded sample rate of files we know will be mono audio
         np.reshape(new_signal, 1)
+    # If the above function is not changed to match incoming files sample rate then it will cause errors for ML
 
     # checks that write location is an existing file and creates it if it does not exist
     if not Path(write_location).exists():
         Path(write_location).mkdir()
 
     new_file_name = "recording_" + str(ocl.creation_date2(read_location, file_name + ".wav"))
-    # write the data to the new file location with the appended string "_processed" to indicate that it is the processed
-    # file
+    # write the data to the new file location
     wavfile.write(write_location + "/" + new_file_name + ".wav", fs,
                   new_signal.astype(np.float32))
 
-    # return new_signal
 
-
-
+# Test statements
+"""
 print('Starting Amy\'s file')
 remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/alittleloudertest_amy_audacityNoiseRed')
 print('Done with Amy\'s file')
 
-"""
 print('Starting Scott\'s file')
 remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/normalvoicetest_amy')
 print('Done with Scott\'s file')
