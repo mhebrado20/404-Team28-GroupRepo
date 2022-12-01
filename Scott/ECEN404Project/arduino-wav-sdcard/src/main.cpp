@@ -15,8 +15,6 @@
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
-#include <ArduinoJson.h>
-
 
 #define ONOFFHOOK_PIN 14
 //#define ONOFFHOOK_WHYS_PIN 27
@@ -32,6 +30,25 @@ void printHex(unsigned char* data, int len)
   Serial.println();
 }
 
+void serialize(const char *fname)
+{
+  File fp = SD.open(fname, FILE_READ);
+
+  unsigned char data[1024];
+
+  while (fp) {
+    for (int i = 0; i < 1023; i++) {
+      if (fp.read() == '\n') {
+        fp.close();
+        break;
+      }
+      data[i] = fp.read();
+    }
+
+    printHex(data, 1024);
+  }
+}
+
 void wait_for_offhook()
 {
   //Serial.println((digitalRead(ONOFFHOOK_PIN)));
@@ -39,20 +56,6 @@ void wait_for_offhook()
   {
     //vTaskDelay(pdMS_TO_TICKS(100));
   }
-}
-
-void serialize(const char *fname)
-{
-  File fp = SD.open(fname, FILE_READ);
-
-  unsigned char data[1024];
-
-  for (int i = 0; i < 1023; i++) {
-    data[i] = fp.read();
-  }
-  
-  printHex(data, 1024);
-  
 }
 
 void record(I2SSampler *input, const char *fname)
@@ -83,7 +86,6 @@ void record(I2SSampler *input, const char *fname)
   // printf("exited loop\n");
   input->stop();
   // and finish the writing
-  // writer->finish(); //need to replace
   // now fill in the header with the correct information and write it again
   // printf("before close\n");
   fp.close();
@@ -191,6 +193,9 @@ void main_task(void *param)
     play(output, "/sdcard/test.wav");
     */
     vTaskDelay(pdMS_TO_TICKS(1000));
+    Serial.println("8");
+    serialize("/test.raw");
+    Serial.println("7");
   }
 }
 
