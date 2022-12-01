@@ -31,7 +31,7 @@ class Decoder(json.JSONDecoder):
             return o
 """
 
-def numFiles(folderLocation):
+def num_files(folderLocation):
     # define our return variable, this one counts the number of files in a folder, so it is called quantity, start at
     # one to prevent counting errors; done by trial and error, I was always one file short on my quantity value
     n = 1
