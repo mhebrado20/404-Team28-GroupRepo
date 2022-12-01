@@ -59,13 +59,19 @@ def remove_silence(read_location: str, write_location: str, file_name: str):
 
     # return new_signal
 
-
-
+# Integrating with Matthew's subsystem
+# remove_silence function
+print('Starting Amy\'s file')
+remove_silence('D:/Documents/School/College/Senior/S3/ECEN 404/404-Team28-GroupRepo/Matthew/voiceMap/speakers/Amy',
+               'D:/Documents/School/College/Senior/S3/ECEN 404/404-Team28-GroupRepo/Matthew/voiceMap/speakers/Amy',
+               '/amyrec')
+print('Done with Amy\'s file')
+"""
 print('Starting Amy\'s file')
 remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/alittleloudertest_amy_audacityNoiseRed')
 print('Done with Amy\'s file')
 
-"""
+
 print('Starting Scott\'s file')
 remove_silence('C:/Users/sky20/Desktop/serialrecording/', 'C:/Users/sky20/Desktop/serialrecording', '/normalvoicetest_amy')
 print('Done with Scott\'s file')
