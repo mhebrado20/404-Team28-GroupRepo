@@ -21,5 +21,5 @@ Splits are currently set to 0.5 sec
 4) Run DemoSingleClassification.py to test the incoming test file from the landline against the
 classification model of the whitelisted/blacklisted voices
 
-5) The highest classification value is returned and sent to the database and then to the device connected to
+5) The highest classification value is returned and sent to the database using Upload_Data.py and then to the device connected to
 the handset and the LEDs will glow green if there was a match on the whitelist
