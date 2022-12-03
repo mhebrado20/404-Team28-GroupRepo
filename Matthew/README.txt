@@ -2,6 +2,12 @@ README
 
 # TODO implement a main .py that executes all of these functions
 
+Important* If using pc or pi as host computer make sure the dependencies in requirements.txt are installed
+do this by navigating to the directory of requirements.txt and running the following command
+
+py -m pip install -r requirements.txt (windows cmd)
+
+
 How to use:
 1) Navigate to the directory that has audio files that need to be converted to WAV
 and run the ConvertToWav.py from the root directory
