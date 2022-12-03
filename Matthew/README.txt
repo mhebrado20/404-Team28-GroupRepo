@@ -8,6 +8,7 @@ do this by navigating to the directory of requirements.txt and running the follo
 py -m pip install -r requirements.txt (windows cmd)
 
 
+When something needs to be "run" use a text editor w/ compiler such as Pycharm
 How to use:
 1) Navigate to the directory that has audio files that need to be converted to WAV
 and run the ConvertToWav.py from the root directory
