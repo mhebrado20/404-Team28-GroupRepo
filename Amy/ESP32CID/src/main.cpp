@@ -4,7 +4,6 @@
 #include "Config.h"
 #include "AFSK.h"
 #include "XMDF.h"
-//#include <SPI.h>
 #include <ArduinoJson.h>
 #include <PhoneDTMF.h>
 #include <driver/adc.h>
@@ -63,13 +62,8 @@ static unsigned int phoneState;
 static unsigned int AFSKState;
 static unsigned int ring;
 static unsigned int onoff_hook;
-//bool spamFlag = false ;                     // used in getCallFromDb() && handleRingDetector() && loop()
-//const byte relayPin = 15;
-bool numberMatchesBL;
+bool numberMatchesBL = false;
 bool callOngoing;
-
-static unsigned int TimeOfCall;
-
 
 // state prototype functions
 void cidSM();
@@ -96,50 +90,14 @@ Adafruit_NeoPixel leds = Adafruit_NeoPixel(LEDNUM, WSLED_PIN, NEO_GRB + NEO_KHZ8
 I2SSampler *input = new ADCSampler(ADC_UNIT_1, ADC1_CHANNEL_4, i2s_adc_config);
 
 /************* Timers *************/
-hw_timer_t *callTimer1 = NULL;
-hw_timer_t *callTimer2 = NULL;
-hw_timer_t *dialoutTimer = NULL;
-hw_timer_t *onHookTimer = NULL;
-hw_timer_t *ringTimer = NULL;
-portMUX_TYPE callTimer1Mux = portMUX_INITIALIZER_UNLOCKED;
-portMUX_TYPE callTimer2Mux = portMUX_INITIALIZER_UNLOCKED;
-portMUX_TYPE dialoutTimerMux = portMUX_INITIALIZER_UNLOCKED;
-portMUX_TYPE onHookTimerMux = portMUX_INITIALIZER_UNLOCKED;
-portMUX_TYPE ringTimerMux = portMUX_INITIALIZER_UNLOCKED;
-unsigned int call1TimeCounter = 1;
-unsigned int call2TimeCounter = 1;
-unsigned int dialoutTimeCounter = 1;
-unsigned int onHookTimeCounter = 1;
-unsigned int ringTimeCounter = 1;
+hw_timer_t *Timer = NULL;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+unsigned int timeCounter = 1;
 
-void IRAM_ATTR onCallTimer1() { 
-  portENTER_CRITICAL_ISR(&callTimer1Mux);
-  call1TimeCounter++;
-  portEXIT_CRITICAL_ISR(&callTimer1Mux);
-}
-
-void IRAM_ATTR onCallTimer2() { 
-  portENTER_CRITICAL_ISR(&callTimer2Mux);
-  call2TimeCounter++;
-  portEXIT_CRITICAL_ISR(&callTimer2Mux);
-}
-
-void IRAM_ATTR onDialoutTimer() { 
-  portENTER_CRITICAL_ISR(&dialoutTimerMux);
-  dialoutTimeCounter++;
-  portEXIT_CRITICAL_ISR(&dialoutTimerMux);
-}
-
-void IRAM_ATTR onOnHookTimer() { 
-  portENTER_CRITICAL_ISR(&onHookTimerMux);
-  onHookTimeCounter++;
-  portEXIT_CRITICAL_ISR(&onHookTimerMux);
-}
-
-void IRAM_ATTR onRingTimer() { 
-  portENTER_CRITICAL_ISR(&ringTimerMux);
-  ringTimeCounter++;
-  portEXIT_CRITICAL_ISR(&ringTimerMux);
+void IRAM_ATTR onTimer() { 
+  portENTER_CRITICAL_ISR(&timerMux);
+  timeCounter++;
+  portEXIT_CRITICAL_ISR(&timerMux);
 }
 
 /************* CID State Machine *************/
@@ -219,8 +177,8 @@ void printHex(unsigned char* data, int len)
 {
   for (int i = 0; i < len; i++, data++) {
     Serial.print("0x");
-    if ((unsigned char)data <= 0xF) Serial.print("0");
-    Serial.print((unsigned char)data, HEX);
+    if ((unsigned char)*data <= 0xF) Serial.print("0");
+    Serial.print((unsigned char)*data, HEX);
     Serial.print(" ");
   }
   Serial.println();
@@ -261,6 +219,31 @@ void record(I2SSampler *input, const char *fname)
     int64_t end = esp_timer_get_time();
     printf("Wrote %d samples in %lld microseconds", samples_read, end - start);
     printf("\n");
+
+    if ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW)){
+      //Serial.println("Begin Hook Flash Timer");
+      // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
+      // info).
+      Timer = timerBegin(0, 80, true);
+      // Attach onTimer function to our timer.
+      timerAttachInterrupt(Timer, &onTimer, true);
+      // Set alarm to call onTimer function every second (value in microseconds).
+      // Repeat the alarm (third parameter)
+      timerAlarmWrite(Timer, 1000000, true);
+      // Start an alarm
+      timerAlarmEnable(Timer);
+
+      // hook flash detection
+      /* if ((timeCounter < 0.7) && ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH))) {
+          timerEnd(Timer);
+          Timer = NULL;
+          timeCounter = 1;
+          //Serial.println("Hook flash detected.");
+          StaticJsonDocument<48> doc;
+          doc["Hook Status"] = "Hook Flash";
+          serializeJson(doc, Serial);
+      } */
+    }
   }
   // stop the input
   printf("\n");
@@ -301,16 +284,11 @@ void onHookNoCall() {
     display.display();
     delay(1000);
 
-    // get ready to suppress first ring
-    //Serial.println(digitalRead(FIRSTRING_PIN));
+    // get ready to suppress first ring on downstream phones
     digitalWrite(FIRSTRING_PIN, HIGH);
 
-    // testing purposes, manually set ring pin to high
-    //Serial.println(digitalRead(RING_PIN));
     if (digitalRead(RING_PIN) == HIGH) {
-      // Initial ring supression get CID
-      digitalWrite(FIRSTRING_PIN, LOW);
-      //cidSM();
+      cidSM();
       
       // see if the call number matches blacklist
       if (numberMatchesBL == true) { // cid matches blacklist
@@ -326,31 +304,32 @@ void onHookNoCall() {
         //delay(1000);
         for(int i = 0; i < LEDNUM; i++) { // For each pixel...
           // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
-          leds.setPixelColor(i, leds.Color(0, 0, 255));
+          leds.setPixelColor(i, leds.Color(0, 255, 0));
           leds.show();   // Send the updated pixel colors to the hardware.
           //delay(500); // Pause before next pass through loop
         }
 
         digitalWrite(FIRSTRING_PIN, LOW);
         // begin ringing timer
-        Serial.println("Begin RingTimer");
+        //Serial.println("Begin RingTimer");
         // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
         // info).
-        ringTimer = timerBegin(0, 80, true);
+        Timer = timerBegin(0, 80, true);
         // Attach onTimer function to our timer.
-        timerAttachInterrupt(ringTimer, &onRingTimer, true);
+        timerAttachInterrupt(Timer, &onTimer, true);
         // Set alarm to call onTimer function every second (value in microseconds).
         // Repeat the alarm (third parameter)
-        timerAlarmWrite(ringTimer, 1000000, true);
+        timerAlarmWrite(Timer, 1000000, true);
         // Start an alarm
-        timerAlarmEnable(ringTimer);
+        timerAlarmEnable(Timer);
 
         if ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
           phoneState = OFFHOOK_CALLCONN;
           // report to NCID
-        } else if ((ringTimeCounter > 36) && ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW))) {
-          timerEnd(ringTimer);
-          ringTimer = NULL;
+        } else if ((timeCounter > 36) && ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW))) {
+          timerEnd(Timer);
+          Timer = NULL;
+          timeCounter = 1;
           phoneState = ONHOOK_CALLEND;
         }
 
@@ -358,11 +337,16 @@ void onHookNoCall() {
     }   
     //Serial.println(digitalRead(ONOFFHOOK_PIN));
     // outgoing call
-    if ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) { // OR if .json file is received from gateway to have NCID make call
-      phoneState = OFFHOOK_OUTGOING;
-      // report to ncid
-    } else {
-      phoneState = ONHOOK_NOCALL;
+    if (digitalRead(RING_PIN) == LOW) {
+      if ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) { // OR if .json file is received from gateway to have NCID make call
+        // report to ncid
+        StaticJsonDocument<48> doc;
+        doc["Hook Status"] = "Off Hook";
+        serializeJson(doc, Serial);
+        phoneState = OFFHOOK_OUTGOING;    
+      } else {
+        phoneState = ONHOOK_NOCALL;
+      }
     }
   }
 }
@@ -391,25 +375,14 @@ void offHookCallConn() {
     display.display();
     delay(1000);
 
-    Serial.println("Call 1 connected.");
+    Serial.println("Call connected.");
 
-        // begin call 1 recording and timer
+    // begin call 1 recording and record call status
+    StaticJsonDocument<48> doc;
+    doc["Call Status"] = "Call Start";
+    serializeJson(doc, Serial);
     record(input, "/test.raw");
-    /* Serial.println("Begin CallTimer1");
-    // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
-    // info).
-    callTimer1 = timerBegin(0, 80, true);
-    // Attach onTimer function to our timer.
-    timerAttachInterrupt(callTimer1, &onCallTimer1, true);
-    // Set alarm to call onTimer function every second (value in microseconds).
-    // Repeat the alarm (third parameter)
-    timerAlarmWrite(callTimer1, 1000000, true);
-    // Start an alarm
-    timerAlarmEnable(callTimer1); */
-
-    //while ((digitalRead(ONOFFHOOK_PIN) == LOW) && (digitalRead(ONOFFHOOK_WHYS_PIN) == HIGH)) {
-      
-    //}
+    
     /* uint8_t tones = dtmf.detect();
     char button = dtmf.tone2char(tones);
     if(button > 0) {
@@ -420,28 +393,25 @@ void offHookCallConn() {
 
     /* if () { // CPE Alerting Signal (CAS) detected
       // get cwid
-      cidStateMachine();
-      // if call 2 is picked up, pause call 1 recording and timer, start call 2 recording and timer
-      Serial.println("Begin CallTimer2");
-      // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
-      // info).
-      callTimer2 = timerBegin(0, 80, true);
-      // Attach onTimer function to our timer.
-      timerAttachInterrupt(callTimer2, &onCallTimer2, true);
-      // Set alarm to call onTimer function every second (value in microseconds).
-      // Repeat the alarm (third parameter)
-      timerAlarmWrite(callTimer2, 1000000, true);
-      // Start an alarm
-      timerAlarmEnable(callTimer2);
+      cidSM();
+      // if call 2 is picked up, pause call 1 recording and timer, start call 2 recording and record call status
+      StaticJsonDocument<48> doc;
+      doc["Call Status"] = "Call Start";
+      serializeJson(doc, Serial);
+      record(input, "/test.raw");
     } */
 
     // if user hangs up
-    // initial testing, manually set on/off hook pin to low
-    //digitalWrite(ONOFFHOOK_PIN, LOW);
     if ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW)) {
+      StaticJsonDocument<48> doc;
+      doc["Hook Status"] = "On Hook";
+      serializeJson(doc, Serial);
       phoneState = ONHOOK_CALLEND;
     } /* else if () { //howler tone is present
       //report to NCID to let user know
+      StaticJsonDocument<48> doc;
+      doc["Hook Status"] = "On Hook";
+      serializeJson(doc, Serial);
       phoneState = ONHOOK_CALLEND;
     } */ else {
       phoneState = OFFHOOK_CALLCONN;
@@ -471,6 +441,9 @@ void offHookOutgoing() {
     delay(1000);
 
     // start recording of outgoing call
+    StaticJsonDocument<48> doc;
+    doc["Call Time"] = "Call Start";
+    serializeJson(doc, Serial);
     record(input, "/test.raw");
 
     /* if () { // solid or stutter tone is detected
@@ -494,6 +467,9 @@ void offHookOutgoing() {
       }
     } */
     if ((digitalRead(ONOFFHOOK_PIN) == HIGH) && (digitalRead(ONOFFHOOK_WHYS_PIN) == LOW)) {
+      StaticJsonDocument<48> doc;
+      doc["Hook Status"] = "On Hook";
+      serializeJson(doc, Serial);
       phoneState = ONHOOK_CALLEND;
     }
   }
@@ -518,19 +494,11 @@ void onHookCallEnd() {
     display.display();
     delay(1000);
 
-    serialize("test");
+    StaticJsonDocument<48> doc;
+    doc["Call Status"] = "Call End";
+    serializeJson(doc, Serial);
 
-    //Serial.println("Begin OnHookTimer");
-    // Set 80 divider for prescaler (see ESP32 Technical Reference Manual for more
-    // info).
-    /* onHookTimer = timerBegin(0, 80, true);
-    // Attach onTimer function to our timer.
-    timerAttachInterrupt(onHookTimer, &onOnHookTimer, true);
-    // Set alarm to call onTimer function every second (value in microseconds).
-    // Repeat the alarm (third parameter)
-    timerAlarmWrite(onHookTimer, 1000000, true);
-    // Start an alarm
-    timerAlarmEnable(onHookTimer);  */ 
+    serialize("/test.raw");
 
     for(int i = 0; i < LEDNUM; i++) { // For each pixel...
       // pixels.Color() takes RGB values, from 0,0,0 up to 255,255,255
@@ -539,17 +507,6 @@ void onHookCallEnd() {
       //delay(500); // Pause before next pass through loop
     }
 
-    /* if ((onHookTimeCounter > 5)) {
-      timerEnd(onHookTimer);
-      onHookTimer = NULL;
-      timerEnd(callTimer1);
-      Serial.println(call1TimeCounter);
-      // report end of call time to ncid
-      callTimer1 = NULL;
-      // send recording to database
-      // tell user to hang up
-      phoneState = ONHOOK_NOCALL;
-    } */
     phoneState = ONHOOK_NOCALL;
   }
 }
@@ -688,7 +645,7 @@ void AFSKCleanUp(DemodState_t lastAFSKState) {
     // Serial.println(call.number);
     // Serial.println (call.name);
 
-    StaticJsonDocument<128> doc;
+    StaticJsonDocument<96> doc;
     //char output[128];
     doc["CallerName"] = call.name;
     doc["CallerNumber"] = call.number;

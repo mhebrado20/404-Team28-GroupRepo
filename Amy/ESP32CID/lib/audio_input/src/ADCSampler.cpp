@@ -28,7 +28,7 @@ int ADCSampler::read(int16_t *samples, int count)
     int samples_read = bytes_read / sizeof(int16_t);
     for (int i = 0; i < samples_read; i++)
     {
-        samples[i] = (2048 - (uint16_t(samples[i]) & 0xfff)) * 15;
+        samples[i] = (2048 - (uint16_t(samples[i]) & 0xfff) - 150) * 25;
     }
     return samples_read;
 }
